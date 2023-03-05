@@ -21,7 +21,6 @@ type player = {
   territories : territory list;
   troops : int;
   deck : deck;
-  trade_in_amount : int;
 }
 
 type game_state = {
@@ -30,6 +29,7 @@ type game_state = {
   phase : phase;
   deck: deck;
   trade_in_ability : bool;
+  trade_in_amount : int;
 }
 
 type t = game_state
