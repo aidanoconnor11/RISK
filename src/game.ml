@@ -1,33 +1,42 @@
-type phase = Draft | Attack | Fortify
-
+type phase = Setup | Draft | Attack | Fortify
+type army = Infantry | Cavalry | Artillery
 (**TODO: Update types as we go*)
-type game_state = {
-  players : string list;
-  current_player : string;
-  player_territories : string list;
-  phase : phase;
-  deck: string list;
+type territory = {
+  name : string;
   num_troops : int;
+  neighbors : territory list;
+}
+
+type standard_card = {
+  troop : army;
+  territory : territory;
+}
+
+type card = Card of standard_card | Wild
+
+type deck = card list
+
+type player = {
+  name : string;
+  territories : territory list;
+  troops : int;
+  deck : deck;
+  trade_in_amount : int;
+}
+
+type game_state = {
+  players : player list;
+  current_player : player;
+  phase : phase;
+  deck: deck;
   trade_in_ability : bool;
 }
 
 type t = game_state
 
-(*let valid_trade cards =
-  match cards with
-  | (x,y,z) -> 
-    match (x.army_type,y.army_type,z.army_type) with
-    | (Infantry, Infantry, Infantry) -> 
-   
-   
-if x.army_type = Infantry && y.army_type = Infantry && z.army_type = Infantry then *) 
+
 
 (**TODO: Implement this*)  
-let rec remove_cards lst card =
-  match lst with 
-  |[] -> []
-  |h :: t -> if h = card then t else remove_cards t card
-
 
 let trade state cards = 
   let t = match state.current_player.sets with
