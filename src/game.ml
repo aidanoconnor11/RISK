@@ -1,6 +1,6 @@
 type phase = Setup | Draft | Attack | Fortify
 type army = Infantry | Cavalry | Artillery
-(**TODO: Update types as we go*)
+
 type territory = {
   name : string;
   num_troops : int;
