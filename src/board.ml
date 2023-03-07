@@ -1,3 +1,4 @@
+(*
 module type Country = sig
   type country
 end
@@ -113,4 +114,6 @@ module BoardImpl : Board = struct
                                             countries = [] }
 
   let advance_board mv current_board = current_board
-end
+end   
+*)
+

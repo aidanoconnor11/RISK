@@ -1,3 +1,4 @@
+(*
 module type Country = sig
   type country
 end
@@ -20,3 +21,4 @@ module type Board = sig
 
   val advance_boardstate : Move.t -> boardstate -> boardstate
 end
+*)

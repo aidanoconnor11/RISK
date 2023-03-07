@@ -4,6 +4,7 @@ type t
 
 type card
 type deck
+type dice
 type territory
 type player
 
@@ -28,9 +29,9 @@ val card_exchange : t -> deck -> deck -> deck -> t
 val draft : t -> (territory * int) list -> bool -> t
 
 (** [battle_decision g d1 d2 t1 t2] is the resulting game state from [g]
-    after the player attacks a defending territory [t2] with dice [d2] from
-    a territory [t1] with dice [d1] AIDAN TODO*)
-val battle_decision : t -> int list -> int list -> territory -> territory -> t
+    after the player attacks a defending territory [t2] with # of dice [d2] 
+    from a territory [t1] with # of dice [d1] AIDAN TODO*)
+val battle_decision : t -> int -> int -> territory -> territory -> t
 
 (** [capture g t1 t2 a] is the resulting game state from [g] after the player 
     captures a territory [t2] with a certain number [a] troops from an 
