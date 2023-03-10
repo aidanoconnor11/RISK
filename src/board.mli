@@ -1,24 +1,24 @@
-(*
-module type Country = sig
-  type country
-end
 
-module type Move = sig
-  type move
+(**TODO: Finish Documentation w/ more than bare bones*)
+type territory
+(**The abstract type representing a territory*)
 
-  val player_moving : move -> string
-  val army_type : move -> string (*Placeholder*)
-  val country_attacking : move -> string
-  val valid_move : move -> bool
-end
+exception UnknownTerritory of string
+(**Raised when asked for a territory that doesn't exist*)
 
-module type Board = sig
-  type boardstate
+exception NotNeighbors of string
+(**Raised when a player attempts to attack a non-neighbor*)
 
-  val init_boardstate : int -> boardstate
-  (*If we want more parameters for how to start the board, this is where they
-    would be changed, int rep. num_player*)
+val territories_from_file : Yojson.Basic.t -> territory list
+(**Gets files from specified file, puts them in a territory list*)
 
-  val advance_boardstate : Move.t -> boardstate -> boardstate
-end
-*)
+val get_territory_from_string : string -> territory list -> territory
+(**Returns territory of the name specified*)
+
+
+val get_territories_from_continent : territory list -> string -> territory list
+(**Returns the territories from a given continent*)
+
+val get_territory_name : territory -> string
+val get_neighbors : territory -> string list
+
