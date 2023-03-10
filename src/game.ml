@@ -1,4 +1,5 @@
 open Random
+open Board
 
 type phase = Setup | Draft | Attack | Fortify
 type army = Infantry | Cavalry | Artillery
@@ -18,8 +19,6 @@ type card = Card of standard_card | Wild
 
 type deck = card list
 
-type dice = One | Two | Three | Four | Five | Six
-
 type player = {
   name : string;
   territories : territory list;
@@ -38,6 +37,14 @@ type game_state = {
 
 type t = game_state
 
+let init_state p d= {
+  players = p;
+  current_player = List.hd p;
+  phase = Setup;
+  deck= d;
+  trade_in_ability = false;
+  trade_in_amount = 0;
+}
 (**Teresa TODO*)
 let initial_turn state ter = state
 
@@ -68,36 +75,37 @@ let rec draft state input choice = state
     let p = Player.add x y in 
     draft {state with current_player = p} t false *)
 
-(**Maps dice to int. Using for dice rolling comparison*)
-let d_t_i dice = function
-| One -> 1
-| Two -> 2
-| Three -> 3
-| Four -> 4
-| Five -> 5
-| Six -> 6
+(*Aidan TODO*)
+let attack state t1 t2 = state
 
-(**Rolls to a random dice value*)
-let roll : dice = 
+(*Aidan TODO*)
+let capture state t1 t2 armies = state
+
+(**Rolls to a random int value between 1 and 6 inclusive*)
+let roll : int = 
   let random_int = Random.int 6 in
   match random_int with
-  | 0 -> One
-  | 1 -> Two
-  | 2 -> Three 
-  | 3 -> Four 
-  | 4 -> Five 
-  | _ -> Six
+  | 0 -> 1
+  | 1 -> 2
+  | 2 -> 3 
+  | 3 -> 4 
+  | 4 -> 5 
+  | _ -> 6
 
-(**NOT WORKING*)
-let max_dice_list (lst : dice list) : int = 
-  let rec ints = function
-  | [] -> []
-  | h :: t -> d_t_i h :: ints t
-  in
-  List.fold_left max min_int []
+(*Sorts given list to be in descending order*)  
+let sorted_dice_list (lst : int list) : int list = 
+  List.rev (List.sort compare lst)
+
+(**Checks if either territory has been captured or not and if not it removes 
+    one troop from t2. NOTE: Capture takes in a number of armies as input but
+    we don't know that number in battle_decision. Need to get it as user input.
+    Also requires a Board function that can remove troops from a territory*)
+let updated_armies g t1 t2 = 
+    if t1.num_troops = 0 then (capture g t1 t2 5 (*5 is placeholder*)) else if t2.num_troops = 0 then
+    capture g t2 t1 5 else g
 
 (*Aidan TODO Possibly remove d1 and d2 as inputs or switch to ints*)
-let rec battle_decision state d1 d2 t1 t2 = 
+let battle_decision state d1 d2 t1 t2 = 
   let rolls = 
   match (d1,d2) with
   | (3,2) -> ([roll;roll;roll],[roll;roll])
@@ -105,14 +113,14 @@ let rec battle_decision state d1 d2 t1 t2 =
   | (1,2) -> ([roll],[roll;roll])
   | (3,1) -> ([roll;roll;roll],[roll])
   | _ -> ([],[]) (*For now, eventually will raise exn*)
-  in let compare_dice rolls = "" in state (*Will finish but I'm falling asleep*)
-  
-
-(*Aidan TODO*)
-let capture state t1 t2 armies = state
-
-(*Aidan TODO*)
-let attack state t1 t2 = state
+  in let rec compare_dice g rolls = 
+    let first = sorted_dice_list (fst rolls) in
+    let second = sorted_dice_list (snd rolls) in
+    if first = [] || second = [] then g else
+    if List.hd first > List.hd second then 
+    compare_dice (updated_armies g t1 t2) (List.tl first,List.tl second) else
+    compare_dice (updated_armies g t2 t1) (List.tl first,List.tl second) 
+  in compare_dice state rolls
 
 (*Teresa TODO*)
 let fortify state t1 armies t2 = state

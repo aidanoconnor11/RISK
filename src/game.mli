@@ -4,9 +4,13 @@ type t
 
 type card
 type deck
-type dice
 type territory
 type player
+
+
+(** [init_state p d] is the initial game state after a player list [p] and a
+    deck [d] are passed in from main*)
+val init_state : player list -> deck -> t
 
 (** [initial_turn g t] is the resulting game state from [g] after a player
     puts a troop in a territory [t] at the start of the game when troops
@@ -28,19 +32,19 @@ val card_exchange : t -> deck -> deck -> deck -> t
     cards given the choice to [b] TERESA*)
 val draft : t -> (territory * int) list -> bool -> t
 
-(** [battle_decision g d1 d2 t1 t2] is the resulting game state from [g]
-    after the player attacks a defending territory [t2] with # of dice [d2] 
-    from a territory [t1] with # of dice [d1] AIDAN TODO*)
-val battle_decision : t -> int -> int -> territory -> territory -> t
+(** [attack g t1 t2] is the resulting game state from [g] after the player
+    attacks a territory [t2] from a connecting territory [t1] AIDAN TODO*)
+val attack : t -> territory -> territory -> t
 
 (** [capture g t1 t2 a] is the resulting game state from [g] after the player 
     captures a territory [t2] with a certain number [a] troops from an 
     attacking territory [t1] AIDAN TODO*)
 val capture : t -> territory -> territory -> int -> t
 
-(** [attack g t1 t2] is the resulting game state from [g] after the player
-    attacks a territory [t2] from a connecting territory [t1] AIDAN TODO*)
-val attack : t -> territory -> territory -> t
+(** [battle_decision g d1 d2 t1 t2] is the resulting game state from [g]
+    after the player attacks a defending territory [t2] with # of dice [d2] 
+    from a territory [t1] with # of dice [d1] AIDAN TODO*)
+val battle_decision : t -> int -> int -> territory -> territory -> t
 
 (** [fortify g t1 a t2] is the resulting game state from [g] after the 
     player fortifies territory [t2] with a certain number of troops [a]
