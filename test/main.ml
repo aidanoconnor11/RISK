@@ -1,4 +1,5 @@
 open OUnit2
+open Game
 open Game__Board
 
 let cmp_set_like_lists lst1 lst2 =
