@@ -39,6 +39,13 @@ type game_state = {
 
 type t = game_state
 
+let init_player name t_lst troops d = {
+  name = name;
+  territories = t_lst;
+  troops = troops;
+  deck = d
+} 
+
 let init_state p d= {
   players = p;
   current_player = List.hd p;
@@ -98,18 +105,15 @@ let roll : int =
 let sorted_dice_list (lst : int list) : int list = 
   List.rev (List.sort compare lst)
 
-
-let rec update_list lst ter = 
-  match lst with
-  | [] -> []
-  | h :: t -> if h = ter then (subtract 1 ter)::t else h::update_list t ter
-
 (**Checks if either territory has been captured or not and if not it removes 
     one troop from t2. NOTE: Capture takes in a number of armies as input but
     we don't know that number in battle_decision. Need to get it as user input.
     Also requires a Board function that can remove troops from a territory.
     For now using a temporary subtract function *)
 let updated_armies g t1 t2 = 
+  (*[update_list] should take a list and territory and return the same list with the 
+     number of troups in the input territory subtracted by 1. Unknown if it works as 
+     intended yet*)
   let rec update_list lst ter = 
   match lst with
   | [] -> []

@@ -55,5 +55,25 @@ let board_tests =
       ];
   ]
 
-let suite = "test suite for Board" >::: List.flatten [ board_tests ]
+
+
+let test = Game.init_state
+
+
+let battle_decision_test 
+(name : string)
+(state : Game.t)
+(d1 : int)
+(d2 : int)
+(t1 : Game.territory)
+(t2 : Game.territory)
+(expected_output : Game.t) : test =
+name >:: fun _ ->
+  assert_equal expected_output (battle_decision state d1 d2 t1 t2)
+
+let game_tests = 
+  [
+
+]
+let suite = "test suite for risk" >::: List.flatten [ board_tests ]
 let _ = run_test_tt_main suite

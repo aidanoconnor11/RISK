@@ -7,6 +7,8 @@ type deck
 type territory
 type player
 
+(**TODO: Documentation*)
+val init_player : string -> territory list -> int -> deck -> player
 
 (** [init_state p d] is the initial game state after a player list [p] and a
     deck [d] are passed in from main*)
