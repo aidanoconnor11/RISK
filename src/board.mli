@@ -15,10 +15,12 @@ val territories_from_file : Yojson.Basic.t -> territory list
 val get_territory_from_string : string -> territory list -> territory
 (**Returns territory of the name specified*)
 
+val add_armies_to_territory : territory -> int -> territory
 
 val get_territories_from_continent : territory list -> string -> territory list
 (**Returns the territories from a given continent*)
 
 val get_territory_name : territory -> string
+val get_territory_numtroops : territory -> int
 val get_neighbors : territory -> string list
 

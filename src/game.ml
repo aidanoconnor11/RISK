@@ -2,42 +2,41 @@ open Random
 open Board
 
 type phase = Setup | Draft | Attack | Fortify
-type army = Infantry | Cavalry | Artillery
 
-type territory = {
-  name : string;
-  num_troops : int;
-  neighbors : territory list;
+type card = { 
+  troop: string;  
+  territory: string;
 }
 
-let subtract n t= {t with num_troops=t.num_troops-n}
-
-type standard_card = {
-  troop : army;
-  territory : territory;
-}
-
-type card = Card of standard_card | Wild
-
-type deck = card list
+let get_troop card = card.troop
+let get_territory card = card.territory
 
 type player = {
   name : string;
   territories : territory list;
   troops : int;
-  deck : deck;
+  deck : card list;
 }
+
+let get_deck (p : player) = p.deck
 
 type game_state = {
   players : player list;
   current_player : player;
   phase : phase;
-  deck: deck;
+  deck: card list;
   trade_in_ability : bool;
   trade_in_amount : int;
 }
 
 type t = game_state
+
+(*DOES NOT FUNCTION ENTIRELY CORRECTLY BUT WILL FIX AFTER MS2*)
+let init_deck json = 
+  let ters = Game__Board.territories_from_file json in
+  let ter_names = List.map (fun x -> Game__Board.get_territory_name x) ters in
+  let cards = List.map (fun x -> {troop = "Infantry";territory=x}) ter_names in cards
+
 
 let init_player name t_lst troops d = {
   name = name;
@@ -117,8 +116,8 @@ let updated_armies g t1 t2 =
   let rec update_list lst ter = 
   match lst with
   | [] -> []
-  | h :: t -> if h = ter then (subtract 1 ter)::t else h::update_list t ter in
-    if t1.num_troops = 0 then (capture g t1 t2 5 (*5 is placeholder*)) else if t2.num_troops = 0 then
+  | h :: t -> if h = ter then (Game__Board.add_armies_to_territory ter (-1))::t else h::update_list t ter in
+    if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2 5 (*5 is placeholder*)) else if Game__Board.get_territory_numtroops t2 = 0 then
     capture g t2 t1 5 (*5 is placeholder*) else
     {g with current_player = 
       {g.current_player with territories = 
