@@ -1,8 +1,6 @@
 open Random
 open Board
 
-type phase = Setup | Draft | Attack | Fortify
-
 type card = { 
   troop: string;  
   territory: string;
@@ -18,16 +16,26 @@ type player = {
   deck : card list;
 }
 
+let get_name p = p.name
+let get_territories p = p.territories
+let get_troops p = p.troops
 let get_deck (p : player) = p.deck
 
 type game_state = {
   players : player list;
   current_player : player;
-  phase : phase;
+  phase : int;
   deck: card list;
   trade_in_ability : bool;
   trade_in_amount : int;
 }
+
+let get_players g = g.players
+let get_current_player g = g.current_player
+let get_phase g = g.phase
+let get_game_deck g = g.deck
+let get_trade_in_ability g = g.trade_in_ability
+let get_trade_in_amount g = g.trade_in_amount
 
 type t = game_state
 
@@ -35,7 +43,8 @@ type t = game_state
 let init_deck json = 
   let ters = Game__Board.territories_from_file json in
   let ter_names = List.map (fun x -> Game__Board.get_territory_name x) ters in
-  let cards = List.map (fun x -> {troop = "Infantry";territory=x}) ter_names in cards
+  let cards = List.map (fun x -> {troop = "Infantry";territory=x}) ter_names in 
+  cards
 
 
 let init_player name t_lst troops d = {
@@ -48,7 +57,7 @@ let init_player name t_lst troops d = {
 let init_state p d= {
   players = p;
   current_player = List.hd p;
-  phase = Setup;
+  phase = 0;
   deck= d;
   trade_in_ability = false;
   trade_in_amount = 0;
@@ -116,8 +125,10 @@ let updated_armies g t1 t2 =
   let rec update_list lst ter = 
   match lst with
   | [] -> []
-  | h :: t -> if h = ter then (Game__Board.add_armies_to_territory ter (-1))::t else h::update_list t ter in
-    if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2 5 (*5 is placeholder*)) else if Game__Board.get_territory_numtroops t2 = 0 then
+  | h :: t -> if h = ter then (Game__Board.add_armies_to_territory ter (-1))::t 
+    else h::update_list t ter in
+    if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2 5 (*5 is placeholder*)) 
+    else if Game__Board.get_territory_numtroops t2 = 0 then
     capture g t2 t1 5 (*5 is placeholder*) else
     {g with current_player = 
       {g.current_player with territories = 

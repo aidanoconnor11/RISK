@@ -63,6 +63,14 @@ let deck_test name expected_output =
   name >:: fun _ ->
   assert_equal expected_output d1_tuple
 
+let p1 = init_player "Bob" (get_territories_from_continent (territories_from_file territory_yojson) "North America") 0 d1
+let p2 = init_player "Dave" (get_territories_from_continent (territories_from_file territory_yojson) "South America") 0 d1
+let player_test name expected_output =
+  name >:: fun _ ->
+  assert_equal ~printer: (pp_list pp_string) expected_output (List.map get_territory_name (Game.get_territories p1))
+
+let g1 = init_state [p1;p2] d1
+
 let battle_decision_test 
 (name : string)
 (state : Game.t)
@@ -74,18 +82,27 @@ let battle_decision_test
 name >:: fun _ ->
   assert_equal expected_output (battle_decision state d1 d2 t1 t2)
 
-(*Will finish test but am preoccupied*)  
 let game_tests = 
   [
     deck_test "Initial" [
-      ("Infantry","Alaska"); ("Infantry","Alberta"); ("Infantry","Central America"); ("Infantry","Eastern US"); 
-      ("Infantry","Greenland"); ("Infantry","Northwest Territory"); ("Infantry","Alaska"); ("Infantry","Alaska"); 
-      ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); 
-      ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); 
-      ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); 
-      ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); 
-      ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); 
-      ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska"); ("Infantry","Alaska")
+      ("Infantry","Alaska"); ("Infantry","Alberta"); ("Infantry","Central America"); ("Infantry","Eastern US"); ("Infantry","Greenland"); ("Infantry","Northwest Territory"); ("Infantry","Ontario"); ("Infantry","Quebec"); ("Infantry","Western US"); ("Infantry","Argentina"); ("Infantry","Brazil"); ("Infantry","Venezuela"); ("Infantry","Peru"); ("Infantry","Congo"); ("Infantry","East Africa"); ("Infantry","Egypt"); ("Infantry","Madagascar"); ("Infantry","North Africa"); ("Infantry","South Africa"); ("Infantry","Eastern Australia"); ("Infantry","New Guinea"); ("Infantry","Indonesia"); ("Infantry","Western Australia"); ("Infantry","Great Britain"); ("Infantry","Iceland"); ("Infantry","Northern Europe"); ("Infantry","Scandanavia"); ("Infantry","Southern Europe"); ("Infantry","Ukraine"); ("Infantry","Western Europe"); ("Infantry","Afghanistan"); ("Infantry","China"); ("Infantry","India"); ("Infantry","Irkutsk"); ("Infantry","Japan"); ("Infantry","Kamchatka"); ("Infantry","Middle East"); ("Infantry","Mongolia"); ("Infantry","Siam"); ("Infantry","Siberia"); ("Infantry","Ural"); ("Infantry","Yakutsk")
+    ];
+    player_test "North America" [
+      "Alaska";
+      "Northwest Territory";
+      "Greenland";
+      "Quebec";
+      "Eastern US";
+      "Western US";
+      "Central America";
+      "Ontario";
+      "Alberta";
+    ]; 
+    player_test "South America" [
+      "Argentina";
+      "Brazil";
+      "Venezuela";
+      "Peru"
     ] 
 ]
 let suite = "test suite for risk" >::: List.flatten [ board_tests; game_tests ]

@@ -10,7 +10,17 @@ type player
 val get_troop : card -> string
 val get_territory : card -> string
 
+val get_name : player -> string
+val get_territories : player -> territory list
+val get_troops : player -> int
+val get_deck : player -> card list
 
+val get_players : t -> player list
+val get_current_player : t -> player
+val get_phase : t -> int
+val get_game_deck : t -> card list
+val get_trade_in_ability : t -> bool
+val get_trade_in_amount : t -> int
 
 val init_deck : Yojson.Basic.t -> card list
 
