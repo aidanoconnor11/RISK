@@ -1,4 +1,3 @@
-
 (**TODO: Finish Documentation w/ more than bare bones*)
 type territory
 (**The abstract type representing a territory*)
@@ -15,10 +14,10 @@ val territories_from_file : Yojson.Basic.t -> territory list
 val get_territory_from_string : string -> territory list -> territory
 (**Returns territory of the name specified*)
 
-
 val get_territories_from_continent : territory list -> string -> territory list
 (**Returns the territories from a given continent*)
 
+val num_troops : territory -> int
+val territories_list : territory list -> string list
 val get_territory_name : territory -> string
 val get_neighbors : territory -> string list
-
