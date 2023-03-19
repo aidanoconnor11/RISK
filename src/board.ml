@@ -40,6 +40,11 @@ let get_territory_from_string (name : string) (terr_list : territory list) :
   try List.find (fun x -> String.compare x.name name = 0) terr_list
   with Not_found -> raise (UnknownTerritory name)
 
+let rec territories_list (g : territory list) : string list =
+  match g with
+  | [] -> []
+  | h :: t -> h.name :: territories_list t
+
 let add_armies_to_territory (t : territory) (num : int) : territory =
   { t with num_troops = t.num_troops + num }
 
@@ -52,6 +57,7 @@ let rec get_territories_from_continent (t : territory list) (s : string) :
         h :: get_territories_from_continent w s
       else get_territories_from_continent w s
 
+let num_troops (x : territory) : int = x.num_troops
 let get_neighbors (t : territory) : string list = t.neighbors
 let get_territory_numtroops t = t.num_troops
 let get_territory_name (t : territory) : string = t.name
