@@ -95,8 +95,20 @@ let rec draft state input choice = state
 (*Aidan TODO*)
 let attack state t1 t2 = state
 
-(*Aidan TODO*)
-let capture state t1 t2 armies = state
+(*Still need to add t2 to current player list and remove from other player list*)
+let capture state t1 t2 armies = 
+  let rec update_list lst ter num = 
+  match lst with
+  | [] -> []
+  | h :: t -> if h = ter then 
+    (Game__Board.add_armies_to_territory ter (num))::t 
+    else h::update_list t ter num in
+  let g1 = { state with current_player = 
+    {state.current_player with territories = 
+      (update_list state.current_player.territories t1 (-armies))}} in 
+  { g1 with current_player = 
+    {g1.current_player with territories = 
+      (update_list g1.current_player.territories t1 armies)}}
 
 (**Rolls to a random int value between 1 and 6 inclusive*)
 let roll : int = 

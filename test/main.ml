@@ -71,6 +71,16 @@ let player_test name expected_output =
 
 let g1 = init_state [p1;p2] d1
 
+let capture_test 
+(name : string)
+(state : Game.t)
+(t1 : Game__Board.territory)
+(t2 : Game__Board.territory)
+(armies : int)
+(expected_output : Game.t) : test =
+name >:: fun _ ->
+  assert_equal expected_output (capture state t1 t2 armies)
+
 let battle_decision_test 
 (name : string)
 (state : Game.t)
