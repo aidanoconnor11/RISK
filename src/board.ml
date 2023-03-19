@@ -53,4 +53,5 @@ let rec get_territories_from_continent (t : territory list) (s : string) :
       else get_territories_from_continent w s
 
 let get_neighbors (t : territory) : string list = t.neighbors
+let get_territory_numtroops t = t.num_troops
 let get_territory_name (t : territory) : string = t.name

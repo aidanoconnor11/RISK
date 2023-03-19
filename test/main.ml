@@ -12,6 +12,7 @@ let cmp_set_like_lists lst1 lst2 =
 (** [pp_string s] pretty-prints string [s]. *)
 let pp_string s = "\"" ^ s ^ "\""
 
+
 (** [pp_list pp_elt lst] pretty-prints list [lst], using [pp_elt] to
     pretty-print each element of [lst]. *)
 let pp_list pp_elt lst =
@@ -55,5 +56,64 @@ let board_tests =
       ];
   ]
 
-let suite = "test suite for Board" >::: List.flatten [ board_tests ]
+  
+let d1 =  (init_deck territory_yojson)
+let d1_tuple = List.map (fun x -> (Game.get_troop x, Game.get_territory x)) d1 
+let deck_test name expected_output =
+  name >:: fun _ ->
+  assert_equal expected_output d1_tuple
+
+let p1 = init_player "Bob" (get_territories_from_continent (territories_from_file territory_yojson) "North America") 0 d1
+let p2 = init_player "Dave" (get_territories_from_continent (territories_from_file territory_yojson) "South America") 0 d1
+let player_test name expected_output =
+  name >:: fun _ ->
+  assert_equal ~printer: (pp_list pp_string) expected_output (List.map get_territory_name (Game.get_territories p1))
+
+let g1 = init_state [p1;p2] d1
+
+let capture_test 
+(name : string)
+(state : Game.t)
+(t1 : Game__Board.territory)
+(t2 : Game__Board.territory)
+(armies : int)
+(expected_output : Game.t) : test =
+name >:: fun _ ->
+  assert_equal expected_output (capture state t1 t2 armies)
+
+let battle_decision_test 
+(name : string)
+(state : Game.t)
+(d1 : int)
+(d2 : int)
+(t1 : Game__Board.territory)
+(t2 : Game__Board.territory)
+(expected_output : Game.t) : test =
+name >:: fun _ ->
+  assert_equal expected_output (battle_decision state d1 d2 t1 t2)
+
+let game_tests = 
+  [
+    deck_test "Initial" [
+      ("Infantry","Alaska"); ("Infantry","Alberta"); ("Infantry","Central America"); ("Infantry","Eastern US"); ("Infantry","Greenland"); ("Infantry","Northwest Territory"); ("Infantry","Ontario"); ("Infantry","Quebec"); ("Infantry","Western US"); ("Infantry","Argentina"); ("Infantry","Brazil"); ("Infantry","Venezuela"); ("Infantry","Peru"); ("Infantry","Congo"); ("Infantry","East Africa"); ("Infantry","Egypt"); ("Infantry","Madagascar"); ("Infantry","North Africa"); ("Infantry","South Africa"); ("Infantry","Eastern Australia"); ("Infantry","New Guinea"); ("Infantry","Indonesia"); ("Infantry","Western Australia"); ("Infantry","Great Britain"); ("Infantry","Iceland"); ("Infantry","Northern Europe"); ("Infantry","Scandanavia"); ("Infantry","Southern Europe"); ("Infantry","Ukraine"); ("Infantry","Western Europe"); ("Infantry","Afghanistan"); ("Infantry","China"); ("Infantry","India"); ("Infantry","Irkutsk"); ("Infantry","Japan"); ("Infantry","Kamchatka"); ("Infantry","Middle East"); ("Infantry","Mongolia"); ("Infantry","Siam"); ("Infantry","Siberia"); ("Infantry","Ural"); ("Infantry","Yakutsk")
+    ];
+    player_test "North America" [
+      "Alaska";
+      "Northwest Territory";
+      "Greenland";
+      "Quebec";
+      "Eastern US";
+      "Western US";
+      "Central America";
+      "Ontario";
+      "Alberta";
+    ]; 
+    player_test "South America" [
+      "Argentina";
+      "Brazil";
+      "Venezuela";
+      "Peru"
+    ] 
+]
+let suite = "test suite for risk" >::: List.flatten [ board_tests; game_tests ]
 let _ = run_test_tt_main suite

@@ -1,46 +1,63 @@
 open Random
 open Board
 
-type phase = Setup | Draft | Attack | Fortify
-type army = Infantry | Cavalry | Artillery
-
-type territory = {
-  name : string;
-  num_troops : int;
-  neighbors : territory list;
+type card = { 
+  troop: string;  
+  territory: string;
 }
 
-type standard_card = {
-  troop : army;
-  territory : territory;
-}
-
-type card = Card of standard_card | Wild
-
-type deck = card list
+let get_troop card = card.troop
+let get_territory card = card.territory
 
 type player = {
   name : string;
   territories : territory list;
   troops : int;
-  deck : deck;
+  deck : card list;
 }
+
+let get_name p = p.name
+let get_territories p = p.territories
+let get_troops p = p.troops
+let get_deck (p : player) = p.deck
 
 type game_state = {
   players : player list;
   current_player : player;
-  phase : phase;
-  deck: deck;
+  phase : int;
+  deck: card list;
   trade_in_ability : bool;
   trade_in_amount : int;
 }
 
+let get_players g = g.players
+let get_current_player g = g.current_player
+let get_phase g = g.phase
+let get_game_deck g = g.deck
+let get_trade_in_ability g = g.trade_in_ability
+let get_trade_in_amount g = g.trade_in_amount
+
 type t = game_state
+
+(*DOES NOT FUNCTION ENTIRELY CORRECTLY BUT WILL FIX AFTER MS2*)
+let init_deck json = 
+  let ters = Game__Board.territories_from_file json in
+  let ter_names = List.map (fun x -> Game__Board.get_territory_name x) ters in
+  let cards = List.map (fun x -> {troop = "Infantry";territory=x}) ter_names in 
+  cards
+
+
+let init_player name t_lst troops d = {
+  name = name;
+  territories = t_lst;
+  troops = troops;
+  deck = d
+} 
 
 let init_state p d= {
   players = p;
   current_player = List.hd p;
-  phase = Setup;
+  phase = 0;
   deck= d;
   trade_in_ability = false;
   trade_in_amount = 0;
@@ -78,8 +95,20 @@ let rec draft state input choice = state
 (*Aidan TODO*)
 let attack state t1 t2 = state
 
-(*Aidan TODO*)
-let capture state t1 t2 armies = state
+(*Still need to add t2 to current player list and remove from other player list*)
+let capture state t1 t2 armies = 
+  let rec update_list lst ter num = 
+  match lst with
+  | [] -> []
+  | h :: t -> if h = ter then 
+    (Game__Board.add_armies_to_territory ter (num))::t 
+    else h::update_list t ter num in
+  let g1 = { state with current_player = 
+    {state.current_player with territories = 
+      (update_list state.current_player.territories t1 (-armies))}} in 
+  { g1 with current_player = 
+    {g1.current_player with territories = 
+      (update_list g1.current_player.territories t1 armies)}}
 
 (**Rolls to a random int value between 1 and 6 inclusive*)
 let roll : int = 
@@ -99,12 +128,25 @@ let sorted_dice_list (lst : int list) : int list =
 (**Checks if either territory has been captured or not and if not it removes 
     one troop from t2. NOTE: Capture takes in a number of armies as input but
     we don't know that number in battle_decision. Need to get it as user input.
-    Also requires a Board function that can remove troops from a territory*)
+    Also requires a Board function that can remove troops from a territory.
+    For now using a temporary subtract function *)
 let updated_armies g t1 t2 = 
-    if t1.num_troops = 0 then (capture g t1 t2 5 (*5 is placeholder*)) else if t2.num_troops = 0 then
-    capture g t2 t1 5 else g
+  (*[update_list] should take a list and territory and return the same list with the 
+     number of troups in the input territory subtracted by 1. Unknown if it works as 
+     intended yet*)
+  let rec update_list lst ter = 
+  match lst with
+  | [] -> []
+  | h :: t -> if h = ter then (Game__Board.add_armies_to_territory ter (-1))::t 
+    else h::update_list t ter in
+    if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2 5 (*5 is placeholder*)) 
+    else if Game__Board.get_territory_numtroops t2 = 0 then
+    capture g t2 t1 5 (*5 is placeholder*) else
+    {g with current_player = 
+      {g.current_player with territories = 
+        (update_list g.current_player.territories t2) }}
+    
 
-(*Aidan TODO Possibly remove d1 and d2 as inputs or switch to ints*)
 let battle_decision state d1 d2 t1 t2 = 
   let rolls = 
   match (d1,d2) with
