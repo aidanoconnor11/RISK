@@ -61,3 +61,5 @@ let num_troops (x : territory) : int = x.num_troops
 let get_neighbors (t : territory) : string list = t.neighbors
 let get_territory_numtroops t = t.num_troops
 let get_territory_name (t : territory) : string = t.name
+
+(*testing to make sure*)
