@@ -1,5 +1,6 @@
 open Random
 open Board
+exception UnknownPlayer
 
 type card = { 
   troop: string;  
@@ -56,7 +57,7 @@ let init_player name t_lst troops d = {
   deck = d
 } 
 
-let init_state p d f= {
+let init_state p d f = {
   players = p;
   current_player = List.hd p;
   phase = 0;
@@ -95,6 +96,18 @@ let rec draft state input choice = state
     let p = Player.add x y in 
     draft {state with current_player = p} t false *)
 
+let get_player_from_territory g ter =
+  let rec check_territories (lst : territory list) =
+  match lst with
+  | [] -> false
+  | h :: t -> if h = ter then true else check_territories t in 
+  let rec check_players (lst : player list) =
+  match lst with
+  | [] -> raise UnknownPlayer
+  | h :: t -> if (check_territories h.territories)=true then h
+  else check_players t in
+  check_players g.players
+
 let rec get_num_troops () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
   "How many troops would you like to move to the captured territory?";
@@ -114,7 +127,7 @@ let rec get_num_troops () =
     get_num_troops ()
 
 
-(*Still need to add t2 to current player list and remove from other player list*)
+(*Needs to be refactored after MS2*)
 let capture state t1 t2 = 
   let x = get_num_troops () in
   let rec update_list lst ter x = 
@@ -123,12 +136,22 @@ let capture state t1 t2 =
   | h :: t -> if h = ter then 
     (Game__Board.add_armies_to_territory ter (x))::t 
     else h::update_list t ter x in
-  let g1 = { state with current_player = 
-    {state.current_player with territories = 
-      (update_list state.current_player.territories t1 (-x))}} in 
-  { g1 with current_player = 
+  let rec remove lst =
+  match lst with
+  | [] -> []
+  | h :: t -> if h = t2 then t else h::remove t in 
+  let p2 = (get_player_from_territory state t2) in
+  let p2_update = {p2 with territories = remove p2.territories} in
+  let rec player_list = function
+  | [] -> []
+  | h :: t -> if h = p2 then p2_update::t else h::player_list t in
+  let g1 = { state with players = player_list state.players} in
+  let g2 = { g1 with current_player = 
     {g1.current_player with territories = 
-      (update_list g1.current_player.territories t1 x)}}
+      t2::(update_list g1.current_player.territories t1 (-x))}} in 
+  { g2 with current_player = 
+    {g2.current_player with territories = 
+      (update_list g2.current_player.territories t2 x)}}
 
 (**Rolls to a random int value between 1 and 6 inclusive*)
 let roll : int = 
@@ -151,9 +174,6 @@ let sorted_dice_list (lst : int list) : int list =
     Also requires a Board function that can remove troops from a territory.
     For now using a temporary subtract function *)
 let updated_armies g t1 t2 = 
-  (*[update_list] should take a list and territory and return the same list with the 
-     number of troups in the input territory subtracted by 1. Unknown if it works as 
-     intended yet*)
   let rec update_list lst ter = 
   match lst with
   | [] -> []
