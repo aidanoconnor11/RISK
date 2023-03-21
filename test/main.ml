@@ -58,28 +58,33 @@ let board_tests =
 
   
 let d1 =  (init_deck territory_yojson)
-let d1_tuple = List.map (fun x -> (Game.get_troop x, Game.get_territory x)) d1 
+let d1_tuple = List.map (fun x -> (Game.get_troop x, Game.get_card_territory x)) d1 
 let deck_test name expected_output =
   name >:: fun _ ->
   assert_equal expected_output d1_tuple
 
 let p1 = init_player "Bob" (get_territories_from_continent (territories_from_file territory_yojson) "North America") 0 d1
 let p2 = init_player "Dave" (get_territories_from_continent (territories_from_file territory_yojson) "South America") 0 d1
-let player_test name expected_output =
+let player_test name expected_output p =
   name >:: fun _ ->
-  assert_equal ~printer: (pp_list pp_string) expected_output (List.map get_territory_name (Game.get_territories p1))
+  assert_equal true (cmp_set_like_lists expected_output (List.map get_territory_name (Game.get_territories p)))
 
-let g1 = init_state [p1;p2] d1
+let g1 = init_state [p1;p2] d1 territory_yojson
 
 let capture_test 
 (name : string)
 (state : Game.t)
-(t1 : Game__Board.territory)
-(t2 : Game__Board.territory)
-(armies : int)
-(expected_output : Game.t) : test =
+(t1 : string)
+(t2 : string)
+(expected_output : string list) : test =
 name >:: fun _ ->
-  assert_equal expected_output (capture state t1 t2 armies)
+  let x = (capture state 
+  (get_territory_from_string t1 (territories_from_file  territory_yojson))
+  (get_territory_from_string t2 (territories_from_file  territory_yojson))) in
+  assert_equal true (cmp_set_like_lists expected_output 
+  (List.map get_territory_name 
+  (Game.get_territories 
+  (Game.get_current_player x))))
 
 let battle_decision_test 
 (name : string)
@@ -107,13 +112,25 @@ let game_tests =
       "Central America";
       "Ontario";
       "Alberta";
-    ]; 
+    ] p1; 
     player_test "South America" [
       "Argentina";
       "Brazil";
       "Venezuela";
       "Peru"
-    ] 
+    ] p2;
+    capture_test "Initial" g1 "Central America" "Peru" [
+      "Alaska";
+      "Northwest Territory";
+      "Greenland";
+      "Quebec";
+      "Eastern US";
+      "Western US";
+      "Central America";
+      "Ontario";
+      "Alberta";
+      "Peru";
+    ]
 ]
 let suite = "test suite for risk" >::: List.flatten [ board_tests; game_tests ]
 let _ = run_test_tt_main suite

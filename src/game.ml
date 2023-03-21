@@ -1,5 +1,6 @@
 open Random
 open Board
+exception UnknownPlayer
 
 type card = { 
   troop: string;  
@@ -7,7 +8,7 @@ type card = {
 }
 
 let get_troop card = card.troop
-let get_territory card = card.territory
+let get_card_territory card = card.territory
 
 type player = {
   name : string;
@@ -19,7 +20,7 @@ type player = {
 let get_name p = p.name
 let get_territories p = p.territories
 let get_troops p = p.troops
-let get_deck (p : player) = p.deck
+let get_deck p = p.deck
 
 type game_state = {
   players : player list;
@@ -28,6 +29,7 @@ type game_state = {
   deck: card list;
   trade_in_ability : bool;
   trade_in_amount : int;
+  territories : territory list
 }
 
 let get_players g = g.players
@@ -36,6 +38,7 @@ let get_phase g = g.phase
 let get_game_deck g = g.deck
 let get_trade_in_ability g = g.trade_in_ability
 let get_trade_in_amount g = g.trade_in_amount
+let get_game_territories g = g.territories
 
 type t = game_state
 
@@ -54,13 +57,14 @@ let init_player name t_lst troops d = {
   deck = d
 } 
 
-let init_state p d= {
+let init_state p d f = {
   players = p;
   current_player = List.hd p;
   phase = 0;
   deck= d;
   trade_in_ability = false;
   trade_in_amount = 0;
+  territories = Game__Board.territories_from_file f;
 }
 (**Teresa TODO*)
 let initial_turn state ter = state
@@ -92,23 +96,62 @@ let rec draft state input choice = state
     let p = Player.add x y in 
     draft {state with current_player = p} t false *)
 
-(*Aidan TODO*)
-let attack state t1 t2 = state
+let get_player_from_territory g ter =
+  let rec check_territories (lst : territory list) =
+  match lst with
+  | [] -> false
+  | h :: t -> if h = ter then true else check_territories t in 
+  let rec check_players (lst : player list) =
+  match lst with
+  | [] -> raise UnknownPlayer
+  | h :: t -> if (check_territories h.territories)=true then h
+  else check_players t in
+  check_players g.players
 
-(*Still need to add t2 to current player list and remove from other player list*)
-let capture state t1 t2 armies = 
-  let rec update_list lst ter num = 
+let rec get_num_troops () =
+  ANSITerminal.print_string [ ANSITerminal.green ] 
+  "How many troops would you like to move to the captured territory?";
+  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+  try
+    let x = int_of_string (read_line ()) in
+    if x < 1 then (
+      ANSITerminal.print_string [ ANSITerminal.green ]
+        "Sorry, you must move at least one troop to capture a territory. How
+        many troops would you like to move?\n";
+      get_num_troops ())
+    else x
+  with exn ->
+    ANSITerminal.print_string [ ANSITerminal.green ]
+      "hmmm this didn't seem to be a valid integer- enter the ASCII character \
+       of how many troops you're moving, i.e 3 \n";
+    get_num_troops ()
+
+
+(*Needs to be refactored after MS2*)
+let capture state t1 t2 = 
+  let x = get_num_troops () in
+  let rec update_list lst ter x = 
   match lst with
   | [] -> []
   | h :: t -> if h = ter then 
-    (Game__Board.add_armies_to_territory ter (num))::t 
-    else h::update_list t ter num in
-  let g1 = { state with current_player = 
-    {state.current_player with territories = 
-      (update_list state.current_player.territories t1 (-armies))}} in 
-  { g1 with current_player = 
+    (Game__Board.add_armies_to_territory ter (x))::t 
+    else h::update_list t ter x in
+  let rec remove lst =
+  match lst with
+  | [] -> []
+  | h :: t -> if h = t2 then t else h::remove t in 
+  let p2 = (get_player_from_territory state t2) in
+  let p2_update = {p2 with territories = remove p2.territories} in
+  let rec player_list = function
+  | [] -> []
+  | h :: t -> if h = p2 then p2_update::t else h::player_list t in
+  let g1 = { state with players = player_list state.players} in
+  let g2 = { g1 with current_player = 
     {g1.current_player with territories = 
-      (update_list g1.current_player.territories t1 armies)}}
+      t2::(update_list g1.current_player.territories t1 (-x))}} in 
+  { g2 with current_player = 
+    {g2.current_player with territories = 
+      (update_list g2.current_player.territories t2 x)}}
 
 (**Rolls to a random int value between 1 and 6 inclusive*)
 let roll : int = 
@@ -131,17 +174,14 @@ let sorted_dice_list (lst : int list) : int list =
     Also requires a Board function that can remove troops from a territory.
     For now using a temporary subtract function *)
 let updated_armies g t1 t2 = 
-  (*[update_list] should take a list and territory and return the same list with the 
-     number of troups in the input territory subtracted by 1. Unknown if it works as 
-     intended yet*)
   let rec update_list lst ter = 
   match lst with
   | [] -> []
   | h :: t -> if h = ter then (Game__Board.add_armies_to_territory ter (-1))::t 
     else h::update_list t ter in
-    if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2 5 (*5 is placeholder*)) 
+    if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2) 
     else if Game__Board.get_territory_numtroops t2 = 0 then
-    capture g t2 t1 5 (*5 is placeholder*) else
+    capture g t2 t1 else
     {g with current_player = 
       {g.current_player with territories = 
         (update_list g.current_player.territories t2) }}
@@ -163,6 +203,63 @@ let battle_decision state d1 d2 t1 t2 =
     compare_dice (updated_armies g t1 t2) (List.tl first,List.tl second) else
     compare_dice (updated_armies g t2 t1) (List.tl first,List.tl second) 
   in compare_dice state rolls
+
+let rec get_num_dice () =
+  ANSITerminal.print_string [ ANSITerminal.green ] 
+  "How many dice would you like to roll? If you are the attacking territory,
+   you may roll between one and three dice. If you are the defending territory,
+   you may roll one or two dice.";
+  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+  try
+    let x = int_of_string (read_line ()) in
+    if x < 1 || x > 3 then (
+      ANSITerminal.print_string [ ANSITerminal.green ]
+        "Sorry, you must roll at least one dice or at most three dice. How
+        many dice would you like to roll? \n";
+      get_num_dice ())
+    else x
+  with exn ->
+    ANSITerminal.print_string [ ANSITerminal.green ]
+      "hmmm this didn't seem to be a valid integer- enter the ASCII character \
+       of how many dice you're rolling, i.e 3 \n";
+    get_num_dice ()
+
+let rec get_territory () g  : territory * territory = 
+  ANSITerminal.print_string [ ANSITerminal.green ] 
+  "From which territory would you like to attack?";
+  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+  try
+    let t1 = read_line () in 
+    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) g.current_player.territories) = false then 
+    (ANSITerminal.print_string [ ANSITerminal.green ]
+    "You do not have possession of this territory. Try again!";
+    get_territory () g) else 
+    (ANSITerminal.print_string [ ANSITerminal.green ] 
+    "Which territory would you like to attack?";
+    ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+    let t2 = read_line () in
+    let ter1 = (Game__Board.get_territory_from_string t1 g.territories) in
+    let neighbors = List.map (fun x -> 
+      Game__Board.get_territory_from_string x g.territories) 
+      (Game__Board.get_neighbors ter1) in
+    if (List.exists (fun x -> 
+      Game__Board.get_territory_name x = t2) neighbors)=false then
+    (ANSITerminal.print_string [ ANSITerminal.green ]
+    "The territory you want to attack is not a neighboring territory
+      of the one you're attacking from. Try again!";
+    get_territory () g) else
+    let ter2 = (Game__Board.get_territory_from_string t2 g.territories) in 
+    (ter1,ter2))
+  with exn -> 
+    ANSITerminal.print_string [ ANSITerminal.green ]
+      "Something went wrong. Try again! \n";
+    get_territory () g
+
+let attack state = 
+  let d1 = get_num_dice () in 
+  let d2 = get_num_dice () in
+  let (t1,t2) = get_territory () state in
+  (battle_decision state d1 d2 t1 t2)
 
 (*Teresa TODO*)
 let fortify state t1 armies t2 = state

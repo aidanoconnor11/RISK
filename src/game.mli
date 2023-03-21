@@ -8,7 +8,7 @@ type card
 type player
 
 val get_troop : card -> string
-val get_territory : card -> string
+val get_card_territory : card -> string
 
 val get_name : player -> string
 val get_territories : player -> territory list
@@ -21,6 +21,7 @@ val get_phase : t -> int
 val get_game_deck : t -> card list
 val get_trade_in_ability : t -> bool
 val get_trade_in_amount : t -> int
+val get_game_territories : t -> territory list
 
 val init_deck : Yojson.Basic.t -> card list
 
@@ -29,7 +30,7 @@ val init_player : string -> Game__Board.territory list -> int -> card list -> pl
 
 (** [init_state p d] is the initial game state after a player list [p] and a
     deck [d] are passed in from main*)
-val init_state : player list -> card list -> t
+val init_state : player list -> card list -> Yojson.Basic.t -> t
 
 (** [initial_turn g t] is the resulting game state from [g] after a player
     puts a troop in a territory [t] at the start of the game when troops
@@ -51,19 +52,19 @@ val card_exchange : t -> card list -> card list -> card list -> t
     cards given the choice to [b] TERESA*)
 val draft : t -> (Game__Board.territory * int) list -> bool -> t
 
-(** [attack g t1 t2] is the resulting game state from [g] after the player
-    attacks a territory [t2] from a connecting territory [t1] AIDAN TODO*)
-val attack : t -> Game__Board.territory -> Game__Board.territory -> t
-
 (** [capture g t1 t2 a] is the resulting game state from [g] after the player 
     captures a territory [t2] with a certain number [a] troops from an 
     attacking territory [t1] AIDAN TODO*)
-val capture : t -> Game__Board.territory -> Game__Board.territory -> int -> t
+val capture : t -> Game__Board.territory -> Game__Board.territory -> t
 
 (** [battle_decision g d1 d2 t1 t2] is the resulting game state from [g]
     after the player attacks a defending territory [t2] with # of dice [d2] 
     from a territory [t1] with # of dice [d1] AIDAN TODO*)
 val battle_decision : t -> int -> int -> Game__Board.territory -> Game__Board.territory -> t
+
+(** [attack g] is the resulting game state from [g] after the player
+    attacks a territory from a connecting territory*)
+val attack : t -> t
 
 (** [fortify g t1 a t2] is the resulting game state from [g] after the 
     player fortifies territory [t2] with a certain number of troops [a]
