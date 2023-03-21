@@ -4,6 +4,8 @@ open Game__Board
 (*To run, run "OCAMLRUNPARAM=b dune exec bin/main.exe" in command line, or make
   play*)
 
+let number_of_players = ref (-1)
+
 let player_color =
   [
     (-1, ANSITerminal.white);
@@ -97,12 +99,16 @@ let print_map (map_name : string) (terr_list : territory list) : unit =
                  (Game__Board.get_territory_from_string x terr_list)))
       else ANSITerminal.print_string [ ANSITerminal.white ] x)
     map_list;
-  ANSITerminal.print_string [ ANSITerminal.blue ] "\nPlayer One is Blue, ";
-  ANSITerminal.print_string [ ANSITerminal.red ] "Player Two is Red, ";
-  ANSITerminal.print_string [ ANSITerminal.yellow ] "Player Three is Yellow, ";
-  ANSITerminal.print_string [ ANSITerminal.cyan ] "Player Four is Cyan, ";
-  ANSITerminal.print_string [ ANSITerminal.green ] "Player Five is Green, ";
-  ANSITerminal.print_string [ ANSITerminal.magenta ] "Player Six is Magenta. ";
+  ANSITerminal.print_string [ ANSITerminal.blue ] "\nPlayer One is Blue";
+  ANSITerminal.print_string [ ANSITerminal.red ] ", Player Two is Red";
+  if !number_of_players > 2 then
+    ANSITerminal.print_string [ ANSITerminal.yellow ] ", Player Three is Yellow";
+  if !number_of_players > 3 then
+    ANSITerminal.print_string [ ANSITerminal.cyan ] ", Player Four is Cyan";
+  if !number_of_players > 4 then
+    ANSITerminal.print_string [ ANSITerminal.green ] ", Player Five is Green";
+  if !number_of_players > 5 then
+    ANSITerminal.print_string [ ANSITerminal.magenta ] ", Player Six is Magenta";
   ANSITerminal.print_string [ ANSITerminal.white ] "\n"
 
 let rec assign_players (num_players : int)
@@ -149,10 +155,14 @@ let rec put_troops_here color (t : territory) (num_players : int)
         - want_troops_int;
       Game__Board.add_armies_to_territory t want_troops_int)
   with exn ->
-    ANSITerminal.print_string [ color ]
-      "This doesn't seem to be a valid integer. Please input the ASCII \
-       representation of an integer \n\
-      \ > ";
+    if String.compare (String.uppercase_ascii input) "QUIT" = 0 then (
+      ANSITerminal.print_string [ color ] "Goodbye!\n";
+      exit 0)
+    else
+      ANSITerminal.print_string [ color ]
+        "This doesn't seem to be a valid integer. Please input the ASCII \
+         representation of an integer \n\
+        \ > ";
     put_troops_here color t num_players player_num (read_line ())
 
 let players_assign_troops (num_players : int) (terr_list : territory list) :
@@ -214,6 +224,7 @@ let main () =
   ANSITerminal.print_string [ ANSITerminal.green ]
     "\nWelcome to RISK in OCAML! How many players are playing in your game?\n";
   let num_players = get_num_players () in
+  number_of_players := num_players;
   ANSITerminal.print_string [ ANSITerminal.green ]
     "What map would you like to play? Our options are territories_basic \n";
   let board = get_map () in
