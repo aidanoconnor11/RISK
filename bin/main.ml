@@ -143,11 +143,14 @@ let rec put_troops_here color (t : territory) (num_players : int)
   try
     let want_troops_int = int_of_string input in
     if
-      want_troops_int
-      > (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num)
+      want_troops_int < 0
+      || want_troops_int
+         > (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num)
     then (
       ANSITerminal.print_string [ color ]
-        "This is too many troops. Please try again \n > ";
+        "This is not a valid amount of troops, either it is negative or you do \
+         not have enough troops. Please try again \n\
+        \ > ";
       put_troops_here color t num_players player_num (read_line ()))
     else (
       (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num) <-
@@ -193,13 +196,20 @@ let players_assign_troops (num_players : int) (terr_list : territory list) :
   done;
   !next_list
 
+let ignore _ = ()
+
 let start_game (num_players : int) (terr_list : territory list) =
   ANSITerminal.print_string [ ANSITerminal.green ]
     "Looks like we're ready to get going! \n";
   ANSITerminal.print_string [ ANSITerminal.green ]
     "First, the game will randomly assign you the proper amount of troops for \
-     how many players are playing, and put a random amount of them at a random \
-     assortment of countries!";
+     how many players are playing and give you control of a proportionate \
+     amount of countries. Then, it will be up to you to place your remaining \
+     troops on the territories you control, based on locations and strategy. \
+     The game will roll to decide who goes first!";
+  ANSITerminal.print_string [ ANSITerminal.green ]
+    "\nHit Enter when you understand and are ready to begin!\n";
+  ignore (read_line ());
   let new_terr_list =
     assign_players num_players
       [ (0, ref 0); (1, ref 0); (2, ref 0); (3, ref 0); (4, ref 0); (5, ref 0) ]
@@ -222,7 +232,9 @@ let main () =
     |\n\ \ | | |_______| |\n\ \ |_| |\n\ \ | ____ |\n\ \ | | | |\n\ \ |___|
     |___|"; *)
   ANSITerminal.print_string [ ANSITerminal.green ]
-    "\nWelcome to RISK in OCAML! How many players are playing in your game?\n";
+    "\n\
+     Welcome to RISK in OCAML! Enter quit at any point to quit the game. \n\
+     How many players are playing in your game?\n";
   let num_players = get_num_players () in
   number_of_players := num_players;
   ANSITerminal.print_string [ ANSITerminal.green ]
