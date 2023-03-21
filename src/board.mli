@@ -22,7 +22,6 @@ val get_territories_from_continent : territory list -> string -> territory list
 val num_territories : int -> territory list -> int
 val set_territory_owner : territory -> int -> territory
 val get_player_number : territory -> int
-val num_troops : territory -> int
 val territories_list : territory list -> string list
 val get_territory_name : territory -> string
 val get_territory_numtroops : territory -> int

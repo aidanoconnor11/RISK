@@ -69,7 +69,6 @@ let rec num_territories (return : int) (t : territory list) : int =
   | [] -> return
   | h :: t -> num_territories (return + 1) t
 
-let num_troops (x : territory) : int = x.num_troops
 let get_neighbors (t : territory) : string list = t.neighbors
 let get_territory_name (t : territory) : string = t.name
 let get_territory_numtroops (t : territory) : int = t.num_troops

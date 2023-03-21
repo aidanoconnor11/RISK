@@ -15,6 +15,17 @@ let player_color =
     (5, ANSITerminal.magenta);
   ]
 
+let initial_troops =
+  [
+    (2, Array.make 2 40);
+    (3, Array.make 3 35);
+    (4, Array.make 4 20);
+    (5, Array.make 5 25);
+    (6, Array.make 6 20);
+  ]
+
+let territories_owned = Array.make 6 []
+
 let rec get_num_players () =
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   let x = read_line () in
@@ -82,15 +93,21 @@ let print_map (map_name : string) (terr_list : territory list) : unit =
           ]
           (x ^ ", "
           ^ string_of_int
-              (Game__Board.num_troops
+              (Game__Board.get_territory_numtroops
                  (Game__Board.get_territory_from_string x terr_list)))
       else ANSITerminal.print_string [ ANSITerminal.white ] x)
     map_list;
+  ANSITerminal.print_string [ ANSITerminal.blue ] "\nPlayer One is Blue, ";
+  ANSITerminal.print_string [ ANSITerminal.red ] "Player Two is Red, ";
+  ANSITerminal.print_string [ ANSITerminal.yellow ] "Player Three is Yellow, ";
+  ANSITerminal.print_string [ ANSITerminal.cyan ] "Player Four is Cyan, ";
+  ANSITerminal.print_string [ ANSITerminal.green ] "Player Five is Green, ";
+  ANSITerminal.print_string [ ANSITerminal.magenta ] "Player Six is Magenta. ";
   ANSITerminal.print_string [ ANSITerminal.white ] "\n"
 
 let rec assign_players (num_players : int)
     (players_num_territories : (int * int ref) list) (num_territories : int)
-    (terr_list : territory list) =
+    (initial_troops : int array) (terr_list : territory list) =
   match terr_list with
   | [] -> []
   | h :: t ->
@@ -104,11 +121,67 @@ let rec assign_players (num_players : int)
         || !num_territories_roller >= (num_territories / num_players) + 1
       then
         assign_players num_players players_num_territories num_territories
-          terr_list
+          initial_troops terr_list
       else (
         num_territories_roller := !num_territories_roller + 1;
-        Game__Board.set_territory_owner h roll
-        :: assign_players num_players players_num_territories num_territories t)
+        initial_troops.(roll) <- initial_troops.(roll) - 1;
+        let g = Game__Board.add_armies_to_territory h 1 in
+        let m = Game__Board.set_territory_owner g roll in
+        territories_owned.(roll) <- m :: territories_owned.(roll);
+        m
+        :: assign_players num_players players_num_territories num_territories
+             initial_troops t)
+
+let rec put_troops_here color (t : territory) (num_players : int)
+    (player_num : int) (input : string) : territory =
+  try
+    let want_troops_int = int_of_string input in
+    if
+      want_troops_int
+      > (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num)
+    then (
+      ANSITerminal.print_string [ color ]
+        "This is too many troops. Please try again \n > ";
+      put_troops_here color t num_players player_num (read_line ()))
+    else (
+      (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num) <-
+        (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num)
+        - want_troops_int;
+      Game__Board.add_armies_to_territory t want_troops_int)
+  with exn ->
+    ANSITerminal.print_string [ color ]
+      "This doesn't seem to be a valid integer. Please input the ASCII \
+       representation of an integer \n\
+      \ > ";
+    put_troops_here color t num_players player_num (read_line ())
+
+let players_assign_troops (num_players : int) (terr_list : territory list) :
+    territory list =
+  let next_list : territory list ref = ref [] in
+  let looper = ref num_players in
+  let first_player = ref (Random.int num_players) in
+  while !looper > 0 do
+    let lst = territories_owned.(!first_player) in
+    let color = snd (List.find (fun z -> fst z = !first_player) player_color) in
+    ANSITerminal.print_string [ color ]
+      ("\nPlayer " ^ string_of_int (!first_player + 1) ^ ": ");
+    List.iter
+      (fun x ->
+        ANSITerminal.print_string
+          [ snd (List.find (fun z -> fst z = !first_player) player_color) ]
+          ("You have control of "
+          ^ (Game__Board.get_territory_name x ^ ", and have ")
+          ^ string_of_int
+              (snd (List.find (fun x -> fst x = num_players) initial_troops)).(!first_player)
+          ^ " troops left. How many would you like to put here? \n > ");
+        let input = read_line () in
+        next_list :=
+          put_troops_here color x num_players !first_player input :: !next_list)
+      lst;
+    first_player := (!first_player + 1) mod num_players;
+    looper := !looper - 1
+  done;
+  !next_list
 
 let start_game (num_players : int) (terr_list : territory list) =
   ANSITerminal.print_string [ ANSITerminal.green ]
@@ -121,9 +194,13 @@ let start_game (num_players : int) (terr_list : territory list) =
     assign_players num_players
       [ (0, ref 0); (1, ref 0); (2, ref 0); (3, ref 0); (4, ref 0); (5, ref 0) ]
       (Game__Board.num_territories 0 terr_list)
+      (snd (List.find (fun x -> fst x = num_players) initial_troops))
       terr_list
   in
-  print_map "map_attempts.txt" new_terr_list
+  print_map "map_attempts.txt" new_terr_list;
+  (*TODO: Improve this: *)
+  let init_board = players_assign_troops num_players new_terr_list in
+  print_map "map_attempts.txt" init_board
 
 (* let terr_one = List.hd terr_list in let new_terr_list =
    Game__Board.add_armies_to_territory (Game__Board.set_territory_owner terr_one
@@ -140,7 +217,6 @@ let main () =
   ANSITerminal.print_string [ ANSITerminal.green ]
     "What map would you like to play? Our options are territories_basic \n";
   let board = get_map () in
-  print_map "map_attempts.txt" board;
   ANSITerminal.print_string [ ANSITerminal.white ] "\n";
   start_game num_players board
 
