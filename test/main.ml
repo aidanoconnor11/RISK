@@ -69,17 +69,22 @@ let player_test name expected_output p =
   name >:: fun _ ->
   assert_equal true (cmp_set_like_lists expected_output (List.map get_territory_name (Game.get_territories p)))
 
-let g1 = init_state [p1;p2] d1
+let g1 = init_state [p1;p2] d1 territory_yojson
 
 let capture_test 
 (name : string)
 (state : Game.t)
-(t1 : Game__Board.territory)
-(t2 : Game__Board.territory)
-(armies : int)
-(expected_output : Game.t) : test =
+(t1 : string)
+(t2 : string)
+(expected_output : string list) : test =
 name >:: fun _ ->
-  assert_equal expected_output (capture state t1 t2)
+  let x = (capture state 
+  (get_territory_from_string t1 (territories_from_file  territory_yojson))
+  (get_territory_from_string t2 (territories_from_file  territory_yojson))) in
+  assert_equal true (cmp_set_like_lists expected_output 
+  (List.map get_territory_name 
+  (Game.get_territories 
+  (Game.get_current_player x))))
 
 let battle_decision_test 
 (name : string)
@@ -113,7 +118,19 @@ let game_tests =
       "Brazil";
       "Venezuela";
       "Peru"
-    ] p2 
+    ] p2;
+    capture_test "Initial" g1 "Central America" "Peru" [
+      "Alaska";
+      "Northwest Territory";
+      "Greenland";
+      "Quebec";
+      "Eastern US";
+      "Western US";
+      "Central America";
+      "Ontario";
+      "Alberta";
+      "Peru";
+    ]
 ]
 let suite = "test suite for risk" >::: List.flatten [ board_tests; game_tests ]
 let _ = run_test_tt_main suite
