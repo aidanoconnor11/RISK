@@ -24,7 +24,6 @@ let get_deck p = p.deck
 
 type game_state = {
   players : player list;
-  current_player : player;
   phase : int;
   deck: card list;
   trade_in_ability : bool;
@@ -33,7 +32,6 @@ type game_state = {
 }
 
 let get_players g = g.players
-let get_current_player g = g.current_player
 let get_phase g = g.phase
 let get_game_deck g = g.deck
 let get_trade_in_ability g = g.trade_in_ability
@@ -59,7 +57,6 @@ let init_player name t_lst troops d = {
 
 let init_state p d f = {
   players = p;
-  current_player = List.hd p;
   phase = 0;
   deck= d;
   trade_in_ability = false;
@@ -136,17 +133,16 @@ let capture state t1 t2 =
   | [] -> []
   | h :: t -> if h = p2 then p2_update::t else h::player_list t in
   let g1 = { state with players = player_list state.players} in
-  let g2 = { g1 with current_player = 
-    {g1.current_player with territories = 
-      t2::(update_list g1.current_player.territories t1 (-x))}} in 
-  if List.length p2.territories > 1 then     
-  { g2 with current_player = 
-    {g2.current_player with territories = 
-      (update_list g2.current_player.territories t2 x)}}
-  else ( elimination { g2 with current_player = 
-    {g2.current_player with territories = 
-      (update_list g2.current_player.territories t2 x)}} p2)
-
+  let p1 = (get_player_from_territory state t1) in
+  let p1_update = {p1 with territories = 
+      t2::(update_list (get_territories (List.hd g1.players)) t1 (-x))} in
+  let g2 = {g1 with players = p1_update::(List.tl (get_players g1))} in
+  let ter_lst = update_list (get_territories (List.hd g2.players)) t2 x in 
+  let p1_final = {p1_update with territories = ter_lst} in
+  let final_lst = p1_final::(List.tl (get_players g2)) in
+  if List.length p2.territories > 1 then
+  { g2 with players = final_lst} else 
+  (elimination {g2 with players = final_lst} p2)
 
 (**Rolls to a random int value between 1 and 6 inclusive*)
 let roll : int = 
@@ -163,26 +159,16 @@ let roll : int =
 let sorted_dice_list (lst : int list) : int list = 
   List.rev (List.sort compare lst)
 
-let rec update_list lst ter n= 
-  match lst with
-  | [] -> []
-  | h :: t -> if h = ter then (Game__Board.add_armies_to_territory ter (n))::t 
-    else h::update_list t ter n
-
 (**Checks if either territory has been captured or not and if not it removes 
-    one troop from t2. NOTE: Capture takes in a number of armies as input but
-    we don't know that number in battle_decision. Need to get it as user input.
-    Also requires a Board function that can remove troops from a territory.
-    For now using a temporary subtract function *)
+    one troop from t2. *)
 let updated_armies g t1 t2 = 
   if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2) 
     else if Game__Board.get_territory_numtroops t2 = 0 then
     capture g t2 t1 else
-    {g with current_player = 
-      {g.current_player with territories = 
-        (update_list g.current_player.territories t2 (-1)) }}
+    let update_player = {(List.hd g.players) with territories = 
+      (update_list (get_territories (List.hd g.players)) t2 (-1))} in
+    {g with players = update_player::(List.tl g.players)}
     
-
 let battle_decision state d1 d2 t1 t2 = 
   let rolls = 
   match (d1,d2) with
@@ -226,7 +212,7 @@ let rec get_territory () g  : territory * territory =
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   try
     let t1 = read_line () in 
-    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) g.current_player.territories) = false then 
+    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) (get_territories(List.hd g.players))) = false then 
     (ANSITerminal.print_string [ ANSITerminal.green ]
     "You do not have possession of this territory. Try again!";
     get_territory () g) else 
@@ -282,7 +268,7 @@ let rec get_territory_fortify () g  : territory * territory =
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   try
     let t1 = read_line () in 
-    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) g.current_player.territories) = false then 
+    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) (get_territories(List.hd g.players))) = false then 
     (ANSITerminal.print_string [ ANSITerminal.green ]
     "You do not have possession of this territory. Try again!";
     get_territory_fortify () g) else 
@@ -290,7 +276,7 @@ let rec get_territory_fortify () g  : territory * territory =
     "Which territory would you like to move the troops to?";
     ANSITerminal.print_string [ ANSITerminal.white ] "> ";
     let t2 = read_line () in
-    if (List.exists (fun x -> Game__Board.get_territory_name x = t2) g.current_player.territories) = false then 
+    if (List.exists (fun x -> Game__Board.get_territory_name x = t2) (get_territories(List.hd g.players))) = false then 
     (ANSITerminal.print_string [ ANSITerminal.green ]
     "You do not have possession of this territory. Try again!";
     get_territory_fortify () g) else
@@ -306,10 +292,12 @@ let rec get_territory_fortify () g  : territory * territory =
 let fortify state = 
   let n = get_num_troops_fortify () in
   let (t1,t2) = get_territory_fortify () state in
-  let g1 = {state with current_player = 
-    {state.current_player with territories = 
-      (update_list state.current_player.territories t1 (-n)) }} in
-  {g1 with current_player =
-    { state.current_player with territories = 
-      (update_list state.current_player.territories t2 (n))}}
+  let first_ter_lst = update_list 
+    (get_territories (List.hd state.players)) t1 (-n) in
+  let second_ter_lst = update_list first_ter_lst t2 n in 
+  let final_player = 
+    {(List.hd state.players) with territories = second_ter_lst} in
+  {state with players = final_player::(List.tl state.players)}
+
+
 

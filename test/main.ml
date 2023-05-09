@@ -82,7 +82,7 @@ name >:: fun _ ->
   let x = (capture state 
   (get_territory_from_string t1 (territories_from_file  territory_yojson))
   (get_territory_from_string t2 (territories_from_file  territory_yojson))) in
-  assert_equal ~printer: (pp_list pp_string) expected_output 
+  assert_equal  ~printer: (pp_list pp_string) expected_output 
   (List.map get_territory_name 
   (Game.get_territories 
   (List.nth (Game.get_players x) i)))
@@ -97,6 +97,16 @@ let battle_decision_test
 (expected_output : Game.t) : test =
 name >:: fun _ ->
   assert_equal expected_output (battle_decision state d1 d2 t1 t2)
+
+let elimination_test 
+(name : string)
+(state : Game.t)
+(player : Game.player)
+(expected_output : string list) : test =
+name >:: fun _ ->
+  let x = elimination state p1 in
+  let list = (List.map Game.get_name (Game.get_players x)) in
+  assert_equal expected_output (list)
 
 let game_tests = 
   [
@@ -120,7 +130,7 @@ let game_tests =
       "Venezuela";
       "Peru"
     ] p2;
-    capture_test "Initial" g1 "Central America" "Peru" 0[
+    capture_test "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
       "Greenland";
@@ -130,13 +140,14 @@ let game_tests =
       "Central America";
       "Ontario";
       "Alberta";
-      "Peru";
-    ];
-    capture_test "Initial" g1 "Central America" "Peru" 1[
-      "Argentina";
       "Venezuela";
+    ];
+    capture_test "Captured" g1 "Central America" "Venezuela" 1[
+      "Argentina";
+      "Peru";
       "Brazil"
-    ]
+    ];
+    elimination_test "Elimination test" g1 p2 ["Bob"]
 ]
 let suite = "test suite for risk" >::: List.flatten [ board_tests; game_tests ]
 let _ = run_test_tt_main suite
