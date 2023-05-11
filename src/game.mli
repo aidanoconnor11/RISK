@@ -23,13 +23,15 @@ val get_trade_in_amount : t -> int
 val get_game_territories : t -> territory list
 
 val init_deck : Yojson.Basic.t -> card list
-
-(**TODO: Documentation*)
 val init_player : string -> Game__Board.territory list -> int -> card list -> player
 
 (** [init_state p d] is the initial game state after a player list [p] and a
     deck [d] are passed in from main*)
 val init_state : player list -> card list -> Yojson.Basic.t -> t
+
+(** [valid_trade g] returns a list of card lists that are valid trades to make
+    with a given game state [g]*)
+val valid_trade : t -> card list list
 
 (** [initial_turn g t] is the resulting game state from [g] after a player
     puts a troop in a territory [t] at the start of the game when troops
@@ -38,31 +40,26 @@ val initial_turn : t -> Game__Board.territory -> t
 
 (** [trade g c] is the resulting game state from [g] after the player 
     makes a trade with 3 cards [c] that are predetermined as a valid
-    trade TERESA*)
-val trade : t -> card * card * card -> t 
+    trade*)
+val trade : t -> t 
 
-(** [card_exchange g d1 d2 d3] is the resulting game state from [g] after
-    an exhange of cards [d3] happens between one deck [d1] and another 
-    deck [d2] TERESA*)
-val card_exchange : t -> card list -> card list -> card list -> t
-
-(** [draft g t b] is the resulting game state from [g] after the player 
+(** [draft g b] is the resulting game state from [g] after the player 
     drafts a certain number of troops to territories [t] and trades in 
-    cards given the choice to [b] TERESA*)
-val draft : t -> (Game__Board.territory * int) list -> bool -> t
+    cards given the choice to *)
+val draft : t -> int -> int -> t
 
 (** [elimination g p] is the resulting game state from [g] after the current
-    player eliminates a player [p] TERESA*)
+    player eliminates a player [p] *)
 val elimination : t -> player -> t
 
 (** [capture g t1 t2 a] is the resulting game state from [g] after the player 
     captures a territory [t2] with a certain number [a] troops from an 
-    attacking territory [t1] AIDAN TODO*)
+    attacking territory [t1] *)
 val capture : t -> Game__Board.territory -> Game__Board.territory -> t
 
 (** [battle_decision g d1 d2 t1 t2] is the resulting game state from [g]
     after the player attacks a defending territory [t2] with # of dice [d2] 
-    from a territory [t1] with # of dice [d1] AIDAN TODO*)
+    from a territory [t1] with # of dice [d1] *)
 val battle_decision : t -> int -> int -> Game__Board.territory -> Game__Board.territory -> t
 
 (** [attack g] is the resulting game state from [g] after the player
