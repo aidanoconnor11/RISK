@@ -52,8 +52,9 @@ let rec get_map () =
   let x = read_line () in
   try
     let board =
-      Game__Board.territories_from_file
-        (Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ x ^ ".json"))
+      ( Game__Board.territories_from_file
+          (Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ x ^ ".json")),
+        x ^ ".txt" )
     in
     board
   with exn ->
@@ -131,15 +132,15 @@ let rec assign_players (num_players : int)
       else (
         num_territories_roller := !num_territories_roller + 1;
         initial_troops.(roll) <- initial_troops.(roll) - 1;
-        let g = Game__Board.add_armies_to_territory h 1 in
-        let m = Game__Board.set_territory_owner g roll in
-        territories_owned.(roll) <- m :: territories_owned.(roll);
-        m
+        ignore (Game__Board.add_armies_to_territory h 1);
+        ignore (Game__Board.set_territory_owner h roll);
+        territories_owned.(roll) <- h :: territories_owned.(roll);
+        h
         :: assign_players num_players players_num_territories num_territories
              initial_troops t)
 
 let rec put_troops_here color (t : territory) (num_players : int)
-    (player_num : int) (input : string) : territory =
+    (player_num : int) (input : string) : unit =
   try
     let want_troops_int = int_of_string input in
     if
@@ -156,7 +157,7 @@ let rec put_troops_here color (t : territory) (num_players : int)
       (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num) <-
         (snd (List.find (fun x -> fst x = num_players) initial_troops)).(player_num)
         - want_troops_int;
-      Game__Board.add_armies_to_territory t want_troops_int)
+      ignore (Game__Board.add_armies_to_territory t want_troops_int))
   with exn ->
     if String.compare (String.uppercase_ascii input) "QUIT" = 0 then (
       ANSITerminal.print_string [ color ] "Goodbye!\n";
@@ -168,37 +169,53 @@ let rec put_troops_here color (t : territory) (num_players : int)
         \ > ";
     put_troops_here color t num_players player_num (read_line ())
 
-let players_assign_troops (num_players : int) (terr_list : territory list) :
-    territory list =
-  let next_list : territory list ref = ref [] in
+(* let players_assign_troops (num_players : int) (terr_list : territory list) :
+   territory list = let next_list : territory list ref = ref [] in let looper =
+   ref num_players in let first_player = ref (Random.int num_players) in while
+   !looper > 0 do let lst = territories_owned.(!first_player) in let color = snd
+   (List.find (fun z -> fst z = !first_player) player_color) in
+   ANSITerminal.print_string [ color ] ("\nPlayer " ^ string_of_int
+   (!first_player + 1) ^ ": "); List.iter (fun x -> ANSITerminal.print_string [
+   snd (List.find (fun z -> fst z = !first_player) player_color) ] ("You have
+   control of " ^ (Game__Board.get_territory_name x ^ ", and have ") ^
+   string_of_int (snd (List.find (fun x -> fst x = num_players)
+   initial_troops)).(!first_player) ^ " troops left. How many would you like to
+   put here? \n > "); let input = read_line () in next_list := put_troops_here
+   color x num_players !first_player input :: !next_list) lst; first_player :=
+   (!first_player + 1) mod num_players; looper := !looper - 1 done;
+   !next_list *)
+let rec mutable_player_assign_troops (num_players : int)
+    (terr_list : territory list) map_name : territory list =
   let looper = ref num_players in
   let first_player = ref (Random.int num_players) in
-  while !looper > 0 do
-    let lst = territories_owned.(!first_player) in
+  while !looper <> 0 do
+    let terr_owned = territories_owned.(!first_player) in
     let color = snd (List.find (fun z -> fst z = !first_player) player_color) in
     ANSITerminal.print_string [ color ]
       ("\nPlayer " ^ string_of_int (!first_player + 1) ^ ": ");
     List.iter
       (fun x ->
-        ANSITerminal.print_string
-          [ snd (List.find (fun z -> fst z = !first_player) player_color) ]
+        ANSITerminal.print_string [ color ]
           ("You have control of "
-          ^ (Game__Board.get_territory_name x ^ ", and have ")
+          ^ Game__Board.get_territory_name x
+          ^ " and have "
           ^ string_of_int
               (snd (List.find (fun x -> fst x = num_players) initial_troops)).(!first_player)
           ^ " troops left. How many would you like to put here? \n > ");
         let input = read_line () in
-        next_list :=
-          put_troops_here color x num_players !first_player input :: !next_list)
-      lst;
+        put_troops_here color x num_players !first_player input;
+        ANSITerminal.erase Screen;
+        print_map map_name terr_list)
+      terr_owned;
     first_player := (!first_player + 1) mod num_players;
     looper := !looper - 1
   done;
-  !next_list
+  terr_list
 
 let ignore _ = ()
 
-let start_game (num_players : int) (terr_list : territory list) =
+let start_game (num_players : int) (terr_list : territory list)
+    (map_name : string) =
   ANSITerminal.print_string [ ANSITerminal.green ]
     "Looks like we're ready to get going! \n";
   ANSITerminal.print_string [ ANSITerminal.green ]
@@ -217,10 +234,12 @@ let start_game (num_players : int) (terr_list : territory list) =
       (snd (List.find (fun x -> fst x = num_players) initial_troops))
       terr_list
   in
-  print_map "map_attempts.txt" new_terr_list;
+  print_map map_name new_terr_list;
   (*TODO: Improve this: *)
-  let init_board = players_assign_troops num_players new_terr_list in
-  print_map "map_attempts.txt" init_board
+  let init_board =
+    mutable_player_assign_troops num_players new_terr_list map_name
+  in
+  print_map map_name init_board
 
 (* let terr_one = List.hd terr_list in let new_terr_list =
    Game__Board.add_armies_to_territory (Game__Board.set_territory_owner terr_one
@@ -241,6 +260,6 @@ let main () =
     "What map would you like to play? Our options are territories_basic \n";
   let board = get_map () in
   ANSITerminal.print_string [ ANSITerminal.white ] "\n";
-  start_game num_players board
+  start_game num_players (fst board) (snd board)
 
 let () = main ()

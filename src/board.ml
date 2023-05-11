@@ -4,11 +4,14 @@ exception NotNeighbors of string
 type territory = {
   name : string;
   continent : string;
-  num_troops : int;
+  mutable num_troops : int;
   neighbors : string list;
-  player : int;
+  mutable player : int;
 }
 
+(** [get_list f] Helper function that builds the initial territory list from
+    json list [f] containing the game's territories and their information.
+    Initializes territories' num_troops to 0 and player to -1.*)
 let rec get_list (json : Yojson.Basic.t list) : territory list =
   match json with
   | [] -> []
@@ -33,6 +36,8 @@ let rec get_list (json : Yojson.Basic.t list) : territory list =
       }
       :: get_list t
 
+(** json file switched to json list for use in get_list, returns territory list
+    from get_list *)
 let territories_from_file (json : Yojson.Basic.t) : territory list =
   let m = json |> Yojson.Basic.Util.to_list in
   get_list m
@@ -50,10 +55,12 @@ let rec territories_list (g : territory list) : string list =
   | h :: t -> h.name :: territories_list t
 
 let add_armies_to_territory (t : territory) (num : int) : territory =
-  { t with num_troops = t.num_troops + num }
+  t.num_troops <- t.num_troops + num;
+  t
 
 let set_territory_owner (t : territory) (player_num : int) : territory =
-  { t with player = player_num }
+  t.player <- player_num;
+  t
 
 let rec get_territories_from_continent (t : territory list) (s : string) :
     territory list =
