@@ -16,7 +16,6 @@ val get_troops : player -> int
 val get_deck : player -> card list
 
 val get_players : t -> player list
-val get_current_player : t -> player
 val get_phase : t -> int
 val get_game_deck : t -> card list
 val get_trade_in_ability : t -> bool
@@ -52,6 +51,10 @@ val card_exchange : t -> card list -> card list -> card list -> t
     cards given the choice to [b] TERESA*)
 val draft : t -> (Game__Board.territory * int) list -> bool -> t
 
+(** [elimination g p] is the resulting game state from [g] after the current
+    player eliminates a player [p] TERESA*)
+val elimination : t -> player -> t
+
 (** [capture g t1 t2 a] is the resulting game state from [g] after the player 
     captures a territory [t2] with a certain number [a] troops from an 
     attacking territory [t1] AIDAN TODO*)
@@ -67,10 +70,7 @@ val battle_decision : t -> int -> int -> Game__Board.territory -> Game__Board.te
 val attack : t -> t
 
 (** [fortify g t1 a t2] is the resulting game state from [g] after the 
-    player fortifies territory [t2] with a certain number of troops [a]
-    from territory [t1] TERESA*)
-val fortify : t -> Game__Board.territory -> int -> Game__Board.territory -> t
+    player fortifies one territory with a certain number of troops
+    from another territory *)
+val fortify : t -> t
 
-(** [elimination g p] is the resulting game state from [g] after the current
-    player eliminates a player [p] TERESA*)
-val elimination : t -> player -> t
