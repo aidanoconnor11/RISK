@@ -9,6 +9,9 @@ type territory = {
   mutable player : int;
 }
 
+(** [get_list f] Helper function that builds the initial territory list from
+    json list [f] containing the game's territories and their information.
+    Initializes territories' num_troops to 0 and player to -1.*)
 let rec get_list (json : Yojson.Basic.t list) : territory list =
   match json with
   | [] -> []
@@ -33,6 +36,8 @@ let rec get_list (json : Yojson.Basic.t list) : territory list =
       }
       :: get_list t
 
+(** json file switched to json list for use in get_list, returns territory list
+    from get_list *)
 let territories_from_file (json : Yojson.Basic.t) : territory list =
   let m = json |> Yojson.Basic.Util.to_list in
   get_list m
