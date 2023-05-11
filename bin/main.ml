@@ -52,8 +52,9 @@ let rec get_map () =
   let x = read_line () in
   try
     let board =
-      Game__Board.territories_from_file
-        (Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ x ^ ".json"))
+      ( Game__Board.territories_from_file
+          (Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ x ^ ".json")),
+        x ^ ".txt" )
     in
     board
   with exn ->
@@ -184,7 +185,7 @@ let rec put_troops_here color (t : territory) (num_players : int)
    (!first_player + 1) mod num_players; looper := !looper - 1 done;
    !next_list *)
 let rec mutable_player_assign_troops (num_players : int)
-    (terr_list : territory list) : territory list =
+    (terr_list : territory list) map_name : territory list =
   let looper = ref num_players in
   let first_player = ref (Random.int num_players) in
   while !looper <> 0 do
@@ -204,7 +205,7 @@ let rec mutable_player_assign_troops (num_players : int)
         let input = read_line () in
         put_troops_here color x num_players !first_player input;
         ANSITerminal.erase Screen;
-        print_map "map_attempts.txt" terr_list)
+        print_map map_name terr_list)
       terr_owned;
     first_player := (!first_player + 1) mod num_players;
     looper := !looper - 1
@@ -213,7 +214,8 @@ let rec mutable_player_assign_troops (num_players : int)
 
 let ignore _ = ()
 
-let start_game (num_players : int) (terr_list : territory list) =
+let start_game (num_players : int) (terr_list : territory list)
+    (map_name : string) =
   ANSITerminal.print_string [ ANSITerminal.green ]
     "Looks like we're ready to get going! \n";
   ANSITerminal.print_string [ ANSITerminal.green ]
@@ -232,10 +234,12 @@ let start_game (num_players : int) (terr_list : territory list) =
       (snd (List.find (fun x -> fst x = num_players) initial_troops))
       terr_list
   in
-  print_map "map_attempts.txt" new_terr_list;
+  print_map map_name new_terr_list;
   (*TODO: Improve this: *)
-  let init_board = mutable_player_assign_troops num_players new_terr_list in
-  print_map "map_attempts.txt" init_board
+  let init_board =
+    mutable_player_assign_troops num_players new_terr_list map_name
+  in
+  print_map map_name init_board
 
 (* let terr_one = List.hd terr_list in let new_terr_list =
    Game__Board.add_armies_to_territory (Game__Board.set_territory_owner terr_one
@@ -256,6 +260,6 @@ let main () =
     "What map would you like to play? Our options are territories_basic \n";
   let board = get_map () in
   ANSITerminal.print_string [ ANSITerminal.white ] "\n";
-  start_game num_players board
+  start_game num_players (fst board) (snd board)
 
 let () = main ()
