@@ -16,7 +16,6 @@ val get_troops : player -> int
 val get_deck : player -> card list
 
 val get_players : t -> player list
-val get_current_player : t -> player
 val get_phase : t -> int
 val get_game_deck : t -> card list
 val get_trade_in_ability : t -> bool

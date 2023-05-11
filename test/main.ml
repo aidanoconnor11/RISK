@@ -82,10 +82,10 @@ name >:: fun _ ->
   let x = (capture state 
   (get_territory_from_string t1 (territories_from_file  territory_yojson))
   (get_territory_from_string t2 (territories_from_file  territory_yojson))) in
-  assert_equal  ~printer: (pp_list pp_string) expected_output 
+  assert_equal true (cmp_set_like_lists expected_output 
   (List.map get_territory_name 
   (Game.get_territories 
-  (List.nth (Game.get_players x) i)))
+  (List.nth (Game.get_players x) i))))
 
 let battle_decision_test 
 (name : string)
@@ -104,9 +104,9 @@ let elimination_test
 (player : Game.player)
 (expected_output : string list) : test =
 name >:: fun _ ->
-  let x = elimination state p1 in
+  let x = elimination state player in
   let list = (List.map Game.get_name (Game.get_players x)) in
-  assert_equal expected_output (list)
+  assert_equal ~printer: (pp_list pp_string) expected_output (list)
 
 let game_tests = 
   [
