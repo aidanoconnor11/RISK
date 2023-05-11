@@ -4,9 +4,9 @@ exception NotNeighbors of string
 type territory = {
   name : string;
   continent : string;
-  num_troops : int;
+  mutable num_troops : int;
   neighbors : string list;
-  player : int;
+  mutable player : int;
 }
 
 let rec get_list (json : Yojson.Basic.t list) : territory list =
@@ -50,10 +50,12 @@ let rec territories_list (g : territory list) : string list =
   | h :: t -> h.name :: territories_list t
 
 let add_armies_to_territory (t : territory) (num : int) : territory =
-  { t with num_troops = t.num_troops + num }
+  t.num_troops <- t.num_troops + num;
+  t
 
 let set_territory_owner (t : territory) (player_num : int) : territory =
-  { t with player = player_num }
+  t.player <- player_num;
+  t
 
 let rec get_territories_from_continent (t : territory list) (s : string) :
     territory list =
@@ -72,4 +74,3 @@ let rec num_territories (return : int) (t : territory list) : int =
 let get_neighbors (t : territory) : string list = t.neighbors
 let get_territory_name (t : territory) : string = t.name
 let get_territory_numtroops (t : territory) : int = t.num_troops
-let x = "hello"
