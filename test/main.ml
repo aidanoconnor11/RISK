@@ -2,6 +2,13 @@ open OUnit2
 open Game
 open Game__Board
 
+(* Helper functions cmp_set_like_lists, pp_string, pp_list taken from A2 *)
+
+(** [cmp_set_like_lists lst1 lst2] compares two lists to see whether they are
+    equivalent set-like lists. That means checking two things. First, they must
+    both be "set-like", meaning that they do not contain any duplicates. Second,
+    they must contain the same elements, though not necessarily in the same
+    order. *)
 let cmp_set_like_lists lst1 lst2 =
   let uniq1 = List.sort_uniq compare lst1 in
   let uniq2 = List.sort_uniq compare lst2 in
@@ -12,7 +19,6 @@ let cmp_set_like_lists lst1 lst2 =
 (** [pp_string s] pretty-prints string [s]. *)
 let pp_string s = "\"" ^ s ^ "\""
 let pp_int i = string_of_int i
-
 
 (** [pp_list pp_elt lst] pretty-prints list [lst], using [pp_elt] to
     pretty-print each element of [lst]. *)
@@ -32,7 +38,7 @@ let pp_list pp_elt lst =
 let territory_yojson =
   Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ "territories_basic.json")
 
-let territory_from_continent (name : string) (continent : string)
+let get_territories_from_continent_test (name : string) (continent : string)
     (f : Yojson.Basic.t) (expected : string list) : test =
   name >:: fun _ ->
   assert (
@@ -40,9 +46,16 @@ let territory_from_continent (name : string) (continent : string)
       (List.map get_territory_name
          (get_territories_from_continent (territories_from_file f) continent)))
 
+let get_territory_from_string_test (name : string) (terr_name : string)
+    (f : Yojson.Basic.t) (expected : string) : test =
+  name >:: fun _ ->
+  assert_equal expected
+    (get_territory_name
+       (get_territory_from_string terr_name (territories_from_file f)))
+
 let board_tests =
   [
-    territory_from_continent "Check territories of North America"
+    get_territories_from_continent_test "Check territories of North America"
       "North America" territory_yojson
       [
         "Alaska";
@@ -55,6 +68,8 @@ let board_tests =
         "Ontario";
         "Alberta";
       ];
+    get_territory_from_string_test "Search for Venezuela" "Venezuela"
+      territory_yojson "Venezuela";
   ]
  
 let d1 =  (init_deck territory_yojson)
