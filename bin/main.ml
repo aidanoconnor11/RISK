@@ -239,12 +239,52 @@ let start_game (num_players : int) (terr_list : territory list)
   let init_board =
     mutable_player_assign_troops num_players new_terr_list map_name
   in
-  print_map map_name init_board
+  print_map map_name init_board;
+  init_board
 
 (* let terr_one = List.hd terr_list in let new_terr_list =
    Game__Board.add_armies_to_territory (Game__Board.set_territory_owner terr_one
    1) 35 :: List.tl terr_list in print_map "map_attempts.txt" new_terr_list *)
 
+let players_from_territories (ters : territory list) : player list = 
+  let players = ref [] in
+  players := [
+    Game.init_player (string_of_int 0) [] 0 [];
+    Game.init_player (string_of_int 1) [] 0 [];
+    Game.init_player (string_of_int 2) [] 0 [];
+    Game.init_player (string_of_int 3) [] 0 [];
+    Game.init_player (string_of_int 4) [] 0 [];
+    Game.init_player (string_of_int 5) [] 0 [];
+  ];
+  List.iter (fun t ->
+    let player_index = (get_player_number t) in
+    let player = List.nth !players player_index in
+    let updated_territories = t :: get_territories player in
+    let updated_player = Game.init_player 
+      (get_name player) 
+      updated_territories
+      (get_troops player) 
+      (get_deck player)
+    in
+    List.iteri (fun i p ->
+      if i = player_index then players := updated_player :: !players else ()
+    ) !players
+  ) ters;
+  !players
+
+let rec play game board = 
+  match Game.finished_game game with 
+  | true ->
+    print_endline ("Congratulations! You have conquered the world!");
+    ()
+  | false ->
+    print_map (snd board) (get_game_territories game);
+    match Game.get_phase game with
+    | 0 -> play (Game.draft game 0 0) board
+    | 1 -> play (Game.attack game) board
+    | 2 -> play (Game.fortify game) board 
+    | _ -> play game  board
+    
 let main () =
   (*To print amongus, uncomment this: ANSITerminal.print_string [
     ANSITerminal.blue ] "\n\ \ \ _____________ \n\ \ __| _______ |\n\ \ | | | |
@@ -260,6 +300,7 @@ let main () =
     "What map would you like to play? Our options are territories_basic \n";
   let board = get_map () in
   ANSITerminal.print_string [ ANSITerminal.white ] "\n";
-  start_game num_players (fst board) (snd board)
-
+  let players = players_from_territories(start_game num_players (fst board) (snd board)) in
+  play (Game.init_state players [] 
+  (Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ "territories_basic.json"))) board
 let () = main ()

@@ -71,3 +71,6 @@ val attack : t -> t
     from another territory *)
 val fortify : t -> t
 
+(** [finished_game g] checks if anyone has won the game in its current state 
+    [g] and returns a bool to indicate whether or not it has*)
+val finished_game : t -> bool
