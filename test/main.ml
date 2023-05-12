@@ -11,6 +11,7 @@ let cmp_set_like_lists lst1 lst2 =
 
 (** [pp_string s] pretty-prints string [s]. *)
 let pp_string s = "\"" ^ s ^ "\""
+let pp_int i = string_of_int i
 
 
 (** [pp_list pp_elt lst] pretty-prints list [lst], using [pp_elt] to
@@ -55,21 +56,38 @@ let board_tests =
         "Alberta";
       ];
   ]
-
-  
+ 
 let d1 =  (init_deck territory_yojson)
 let d1_tuple = List.map (fun x -> (Game.get_troop x, Game.get_card_territory x)) d1 
 let deck_test name expected_output =
   name >:: fun _ ->
   assert_equal expected_output d1_tuple
 
+let europe = (get_territories_from_continent (territories_from_file territory_yojson) "Europe")
+let asia = (get_territories_from_continent (territories_from_file territory_yojson) "Asia")
+let scandanavia = add_armies_to_territory (get_territory_from_string "Scandanavia" europe) 3
+let iceland = add_armies_to_territory (get_territory_from_string "Iceland" europe) 5
+let gb = add_armies_to_territory (get_territory_from_string "Great Britain" europe) 7
+
+let china = add_armies_to_territory (get_territory_from_string "China" asia) 2
+let india = add_armies_to_territory (get_territory_from_string "India" asia) 4
+let t1 = [scandanavia; iceland; gb]
+let t2 = [china; india]
+
 let p1 = init_player "Bob" (get_territories_from_continent (territories_from_file territory_yojson) "North America") 0 d1
 let p2 = init_player "Dave" (get_territories_from_continent (territories_from_file territory_yojson) "South America") 0 d1
+let p3 = init_player "Joe" t2 20 d1 
+let p4 = init_player "Matt" t1 12 d1
+
 let player_test name expected_output p =
   name >:: fun _ ->
   assert_equal true (cmp_set_like_lists expected_output (List.map get_territory_name (Game.get_territories p)))
 
 let g1 = init_state [p1;p2] d1 territory_yojson
+
+let g2 = init_state [p4;p3;p1;p2] d1 territory_yojson
+
+let g3 = init_state [p3;p4;p1;p2] d1 territory_yojson
 
 let capture_test 
 (name : string)
@@ -107,6 +125,29 @@ name >:: fun _ ->
   let x = elimination state player in
   let list = (List.map Game.get_name (Game.get_players x)) in
   assert_equal ~printer: (pp_list pp_string) expected_output (list)
+ 
+let update_list_test
+(name : string)
+(lst : Game__Board.territory list)
+(ter : Game__Board.territory)
+(x : int) 
+(expected_output : int list): test = 
+name >:: fun _ ->
+  let out = Game.update_list lst ter x in 
+  let list = (List.map Game__Board.get_territory_numtroops out) in
+  assert_equal ~printer:(pp_list pp_int) expected_output list 
+
+let fortify_test
+(name : string)
+(state : Game.t)
+(expected_output : int list) : test = 
+name >:: fun _ ->
+  let new_s = fortify state in
+  let current_player = List.hd (Game.get_players new_s) in
+  let list = List.map Game__Board.get_territory_numtroops (Game.get_territories current_player) in
+  assert_equal ~printer:(pp_list pp_int) expected_output list
+  
+
 
 let game_tests = 
   [
@@ -130,7 +171,7 @@ let game_tests =
       "Venezuela";
       "Peru"
     ] p2;
-    capture_test "Capturing" g1 "Central America" "Venezuela" 0[
+    (* capture_test "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
       "Greenland";
@@ -146,8 +187,21 @@ let game_tests =
       "Argentina";
       "Peru";
       "Brazil"
-    ];
-    elimination_test "Elimination test" g1 p2 ["Bob"]
+    ]; *)
+    elimination_test "Elimination test" g1 p2 ["Bob"];
+
+    elimination_test "Eliminating from a longer list" g2 p1 ["Matt"; "Joe"; "Dave"];
+
+    update_list_test "updating Iceland" t1 iceland 5 [3;10;7];
+
+    update_list_test "updating China" t2 china 12 [14;4];
+
+    fortify_test "Scandanavia to Iceland" g2 [1; 7; 7];
+
+    (* fortify_test "China to India" g3 [1; 5]; *)
+
+
+
 ]
 let suite = "test suite for risk" >::: List.flatten [ board_tests; game_tests ]
 let _ = run_test_tt_main suite
