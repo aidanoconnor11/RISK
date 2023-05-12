@@ -197,9 +197,9 @@ let rec get_cards () g : card * card * card =
 let rec update_list lst ter x =
   match lst with
   | [] -> []
-  | h :: t ->
-      if h = ter then Game__Board.add_armies_to_territory ter x :: t
-      else h :: update_list t ter x
+  | h :: t -> if Game__Board.get_territory_name h = Game__Board.get_territory_name ter  then 
+    (Game__Board.add_armies_to_territory h x)::t 
+    else h::update_list t ter x 
 
 let turn_change state =
   let hd_to_tl =
@@ -306,32 +306,25 @@ let rec get_draft_troops troops () =
 let rec draft state count num_left =
   let ter = get_territory_draft () state (List.hd state.players) in
   let num_troops = get_draft_troops (troops_given state) () in
-  let new_ter_lst =
-    update_list (get_territories (List.hd state.players)) ter num_troops
-  in
-  let final_player =
-    { (List.hd state.players) with territories = new_ter_lst }
-  in
-  state.phase <- 1;
-  if count = 0 then
-    let updated_state = turn_change state in
-    let choice = get_trade_choice () in
-    let new_state =
-      match choice with
-      | true -> trade updated_state
-      | false -> updated_state
-    in
-    let ter = get_territory_draft () new_state (List.hd new_state.players) in
-    let new_ter_lst =
-      update_list (get_territories (List.hd new_state.players)) ter num_troops
-    in
-    let final_player =
-      { (List.hd new_state.players) with territories = new_ter_lst }
-    in
-    let return_state =
-      { state with players = final_player :: List.tl state.players }
-    in
-    draft return_state (count + 1) (num_left - num_troops)
+  let new_ter_lst = 
+    update_list (get_territories (List.hd state.players)) ter num_troops in
+  let final_player = 
+      {(List.hd state.players) with territories = new_ter_lst} in
+  state.phase<-1;
+  if count = 0 then 
+  let choice = get_trade_choice () in
+  let new_state = 
+    match choice with
+    | true -> trade state
+    | false -> state in
+  let ter = get_territory_draft () new_state (List.hd new_state.players) in
+  let new_ter_lst = 
+    update_list (get_territories (List.hd new_state.players)) ter num_troops in
+  let final_player = 
+    {(List.hd new_state.players) with territories = new_ter_lst} in
+  let return_state = 
+    {state with players = final_player::(List.tl state.players)} in
+    draft return_state (count+1) (num_left - num_troops)
   else if num_left > 0 then
     let return_state =
       { state with players = final_player :: List.tl state.players }
@@ -348,10 +341,9 @@ let elimination state p =
 
 let get_player_from_territory g ter =
   let rec check_territories (lst : territory list) =
-    match lst with
-    | [] -> false
-    | h :: t -> if h = ter then true else check_territories t
-  in
+  match lst with
+  | [] -> false
+  | h :: t -> if Game__Board.get_territory_name h = Game__Board.get_territory_name ter then true else check_territories t in 
   let rec check_players (lst : player list) =
     match lst with
     | [] -> raise UnknownPlayer
@@ -364,7 +356,7 @@ let get_player_from_territory g ter =
 let rec remove lst t2 =
   match lst with
   | [] -> []
-  | h :: t -> if h = t2 then t else h :: remove t t2
+  | h :: t -> if get_territory_name h = get_territory_name t2 then t else h::remove t t2
 
 let rec get_num_troops () =
   ANSITerminal.print_string [ ANSITerminal.green ]
@@ -544,16 +536,15 @@ let rec get_territory_fortify () g : territory * territory =
 (*Implementing without dfs checking neighbors for now*)
 let fortify state =
   let n = get_num_troops_fortify () in
-  let t1, t2 = get_territory_fortify () state in
-  let first_ter_lst =
-    update_list (get_territories (List.hd state.players)) t1 (-n)
-  in
-  let second_ter_lst = update_list first_ter_lst t2 n in
-  let final_player =
-    { (List.hd state.players) with territories = second_ter_lst }
-  in
-  state.phase <- 0;
-  { state with players = final_player :: List.tl state.players }
+  let (t1,t2) = get_territory_fortify () state in
+  let first_ter_lst = update_list 
+    (get_territories (List.hd state.players)) t1 (-n) in
+  let second_ter_lst = update_list first_ter_lst t2 n in 
+  let final_player = 
+    {(List.hd state.players) with territories = second_ter_lst} in
+  let updated_state = turn_change state in  
+  updated_state.phase<-0;  
+  {updated_state with players = final_player::(List.tl state.players)}
 
 let finished_game state =
   let rec check (lst : player list) =
