@@ -156,9 +156,15 @@ let battle_decision_test
 (d2 : int)
 (t1 : Game__Board.territory)
 (t2 : Game__Board.territory)
-(expected_output : Game.t) : test =
+(i : int)
+(expected_output : int list) : test =
 name >:: fun _ ->
-  assert_equal expected_output (battle_decision state d1 d2 t1 t2)
+  let new_s = Game.battle_decision state d1 d2 t1 t2 in
+  let player = List.nth (Game.get_players new_s) i in
+  let list = List.map Game__Board.get_territory_numtroops (Game.get_territories player) in 
+  assert_equal ~printer:(pp_list pp_int) expected_output list
+
+
 
 let elimination_test (name : string) (state : Game.t) (player : Game.player)
     (expected_output : string list) : test =
@@ -230,7 +236,17 @@ let game_tests =
       "Brazil"
     ];  *)
 
-    capture_territory_troops_test "test" g2 gb china 0 [5; 3; 5; 4];
+    (* capture_territory_troops_test "capturing china by GB" g2 gb china 0 [5; 3; 5; 4]; *)
+    (* capture_territory_troops_test "captured China" g2 gb china 1 [4]; *)
+
+    battle_decision_test "3 vs 1" g2 3 1 gb china 1 [1; 4];
+    battle_decision_test "3 vs 1" g2 3 1 gb china 0 [3; 5; 7];
+    battle_decision_test "3 vs 1" g2 3 1 gb china 1 [1; 4];
+    
+    battle_decision_test "3 vs 1 2nd try" g2 3 1 gb china 1 [1;4];
+    battle_decision_test "3 vs 1 3rd" g2 3 1 gb china 0 [3; 5; 6];
+
+
 
     (* elimination_test "Elimination test" g1 p2 ["Bob"];
 
