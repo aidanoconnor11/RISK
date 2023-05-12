@@ -225,7 +225,7 @@ let g2 = init_state [p4;p3;p1;p2] d1 territory_yojson
 
 let g3 = init_state [p3;p4;p1;p2] d1 territory_yojson
 
-let capture_test 
+let capture_test_with_strings
 (name : string)
 (state : Game.t)
 (t1 : string)
@@ -250,9 +250,20 @@ let capture_territory_troops_test
 (expected_output : int list) : test =
 name >:: fun _ ->
   let new_s = capture state t1 t2 in
-  (* let player = List.hd (Game.get_players new_s) in *)
   let list = (List.map Game__Board.get_territory_numtroops (Game.get_territories (List.nth (Game.get_players new_s) i))) in 
   assert_equal ~printer:(pp_list pp_int) expected_output list
+
+let capture_test_with_ter
+(name : string)
+(state : Game.t)
+(t1 : Game__Board.territory)
+(t2 : Game__Board.territory)
+(i : int)
+(expected_output : string list) : test =
+name >:: fun _ ->
+  let new_s = capture state t1 t2 in 
+  let list = List.map Game__Board.get_territory_name (Game.get_territories (List.nth (Game.get_players new_s) i)) in
+  assert_equal ~printer:(pp_list pp_string) expected_output list
 
 let battle_decision_test 
 (name : string)
@@ -316,7 +327,7 @@ let game_tests =
       "Venezuela";
       "Peru"
     ] p2;
-    (* capture_test "Capturing" g1 "Central America" "Venezuela" 0[
+    capture_test_with_strings "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
       "Greenland";
@@ -328,14 +339,26 @@ let game_tests =
       "Alberta";
       "Venezuela";
     ];
-    capture_test "Captured" g1 "Central America" "Venezuela" 1[
+    capture_test_with_strings "Captured" g1 "Central America" "Venezuela" 1[
       "Argentina";
       "Peru";
       "Brazil"
-    ];  *)
+    ]; 
 
-    (* capture_territory_troops_test "capturing china by GB" g2 gb china 0 [5; 3; 5; 4]; *)
-    (* capture_territory_troops_test "captured China" g2 gb china 1 [4]; *)
+    capture_test_with_ter "Great Britain captures China" g2 gb china 0 [
+      "China";
+      "Scandanavia";
+      "Iceland";
+      "Great Britain"
+    ];
+
+    capture_test_with_ter "China captured" g2 gb china 1 [
+      "India"
+    ];
+
+
+    (* capture_territory_troops_test "capturing china by GB" g2 gb china 0 [5; 3; 5; 4]; 
+    capture_territory_troops_test "captured China" g2 gb china 1 [4];
 
     battle_decision_test "3 vs 1" g2 3 1 gb china 1 [1; 4];
     battle_decision_test "3 vs 1" g2 3 1 gb china 0 [3; 5; 7];
@@ -346,7 +369,7 @@ let game_tests =
 
 
 
-    (* elimination_test "Elimination test" g1 p2 ["Bob"];
+    elimination_test "Elimination test" g1 p2 ["Bob"];
 
     elimination_test "Eliminating from a longer list" g2 p1 ["Matt"; "Joe"; "Dave"];
 
