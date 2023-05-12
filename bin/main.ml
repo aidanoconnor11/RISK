@@ -245,6 +245,18 @@ let start_game (num_players : int) (terr_list : territory list)
    Game__Board.add_armies_to_territory (Game__Board.set_territory_owner terr_one
    1) 35 :: List.tl terr_list in print_map "map_attempts.txt" new_terr_list *)
 
+  let rec play game = 
+    match Game.finished_game game with 
+    | true ->
+       print_endline ("Congratulations! You have conquered the world!");
+       ()
+    | false ->
+      match Game.get_phase game with
+      | 0 -> play (Game.draft game 0 0)
+      | 1 -> play (Game.attack game)
+      | 2 -> play (Game.fortify game)
+      | _ -> play game
+    
 let main () =
   (*To print amongus, uncomment this: ANSITerminal.print_string [
     ANSITerminal.blue ] "\n\ \ \ _____________ \n\ \ __| _______ |\n\ \ | | | |
@@ -260,6 +272,6 @@ let main () =
     "What map would you like to play? Our options are territories_basic \n";
   let board = get_map () in
   ANSITerminal.print_string [ ANSITerminal.white ] "\n";
-  start_game num_players (fst board) (snd board)
-
+  start_game num_players (fst board) (snd board);
+  play (Game.init_state [] [] (Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ "territories_basic.json")))
 let () = main ()

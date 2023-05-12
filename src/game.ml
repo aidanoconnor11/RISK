@@ -243,7 +243,6 @@ let rec get_trade_choice () =
       "hmmm this didn't seem to be a valid input, try again! \n";
     get_trade_choice ()
 
-
 let rec get_draft_troops () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
   "How many troops would you like to move to this territory?";
@@ -421,7 +420,6 @@ let attack state =
   let (t1,t2) = get_territory () state in
   (battle_decision state d1 d2 t1 t2)
 
-
 let rec get_num_troops_fortify () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
   "How many troops would you like to move?";
@@ -476,6 +474,15 @@ let fortify state =
   let final_player = 
     {(List.hd state.players) with territories = second_ter_lst} in
   {state with players = final_player::(List.tl state.players)}
+
+let finished_game state =
+  let rec check (lst : player list) =
+    match lst with 
+    | [] -> false
+    | h :: t -> if (List.length h.territories) == (List.length state.territories)
+      then true else check t 
+  in
+  check state.players
 
 
 
