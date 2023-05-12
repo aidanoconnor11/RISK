@@ -19,6 +19,7 @@ let cmp_set_like_lists lst1 lst2 =
 (** [pp_string s] pretty-prints string [s]. *)
 let pp_string s = "\"" ^ s ^ "\""
 let pp_int i = string_of_int i
+let pp_tuple t = "(\"" ^ fst t ^ "\",\"" ^ snd t ^ "\")"
 
 
 (** [pp_list pp_elt lst] pretty-prints list [lst], using [pp_elt] to
@@ -78,7 +79,7 @@ let d1 =  (init_deck territory_yojson)
 let d1_tuple = List.map (fun x -> (Game.get_troop x, Game.get_card_territory x)) d1 
 
 let deck_test name expected_output =
-  name >:: fun _ -> assert_equal expected_output d1_tuple
+  name >:: fun _ -> assert_equal ~printer:(pp_list pp_tuple) expected_output d1_tuple
 
 let p1 =
   init_player "Bob"
@@ -193,9 +194,7 @@ name >:: fun _ ->
 
 let game_tests =
   [
-    deck_test "Initial" [
-      ("Infantry","Alaska"); ("Infantry","Alberta"); ("Infantry","Central America"); ("Infantry","Eastern US"); ("Infantry","Greenland"); ("Infantry","Northwest Territory"); ("Infantry","Ontario"); ("Infantry","Quebec"); ("Infantry","Western US"); ("Infantry","Argentina"); ("Infantry","Brazil"); ("Infantry","Venezuela"); ("Infantry","Peru"); ("Infantry","Congo"); ("Infantry","East Africa"); ("Infantry","Egypt"); ("Infantry","Madagascar"); ("Infantry","North Africa"); ("Infantry","South Africa"); ("Infantry","Eastern Australia"); ("Infantry","New Guinea"); ("Infantry","Indonesia"); ("Infantry","Western Australia"); ("Infantry","Great Britain"); ("Infantry","Iceland"); ("Infantry","Northern Europe"); ("Infantry","Scandanavia"); ("Infantry","Southern Europe"); ("Infantry","Ukraine"); ("Infantry","Western Europe"); ("Infantry","Afghanistan"); ("Infantry","China"); ("Infantry","India"); ("Infantry","Irkutsk"); ("Infantry","Japan"); ("Infantry","Kamchatka"); ("Infantry","Middle East"); ("Infantry","Mongolia"); ("Infantry","Siam"); ("Infantry","Siberia"); ("Infantry","Ural"); ("Infantry","Yakutsk")
-    ];
+    deck_test "Initial" [("Cavalry","Alaska"); ("Infantry","Alberta"); ("Artillery","Central America"); ("Cavalry","Eastern US"); ("Infantry","Greenland"); ("Artillery","Northwest Territory"); ("Cavalry","Ontario"); ("Infantry","Quebec"); ("Artillery","Western US"); ("Cavalry","Argentina"); ("Infantry","Brazil"); ("Artillery","Venezuela"); ("Cavalry","Peru"); ("Infantry","Congo"); ("Artillery","Alaska"); ("Cavalry","Alberta"); ("Infantry","Central America"); ("Artillery","Eastern US"); ("Cavalry","Greenland"); ("Infantry","Northwest Territory"); ("Artillery","Ontario"); ("Cavalry","Quebec"); ("Infantry","Western US"); ("Artillery","Argentina"); ("Cavalry","Brazil"); ("Infantry","Venezuela"); ("Artillery","Peru"); ("Cavalry","Congo"); ("Infantry","Alaska"); ("Artillery","Alberta"); ("Cavalry","Central America"); ("Infantry","Eastern US"); ("Artillery","Greenland"); ("Cavalry","Northwest Territory"); ("Infantry","Ontario"); ("Artillery","Quebec"); ("Cavalry","Western US"); ("Infantry","Argentina"); ("Artillery","Brazil"); ("Cavalry","Venezuela"); ("Infantry","Peru"); ("Artillery","Congo")];
     player_test "North America" [
       "Alaska";
       "Northwest Territory";

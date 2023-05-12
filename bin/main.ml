@@ -266,6 +266,9 @@ let players_from_territories (ters : territory list) : player list =
     (fun x -> not (x = Game.init_player (string_of_int 0) [] 0 []))
     (Array.to_list players)
 
+let print_players (players : player list) =
+  List.iter (fun x -> print_string (get_name x)) players
+
 let rec play game board =
   match Game.finished_game game with
   | true ->
@@ -273,8 +276,10 @@ let rec play game board =
       ()
   | false -> (
       print_map (snd board) (territories_from_players (get_players game));
+      print_players (get_players game);
+      print_string (get_card_territory (List.hd (get_game_deck  game)));
       match Game.get_phase game with
-      | 0 -> play (Game.draft game 0 0) board
+      | 0 -> play (Game.draft game) board
       | 1 -> play (Game.attack game) board
       | 2 -> play (Game.fortify game) board
       | _ -> play game board)
@@ -298,8 +303,13 @@ let main () =
   let players =
     players_from_territories (start_game num_players (fst board) (snd board))
   in
+  let cards = Game.init_deck (Yojson.Basic.from_file
+          ("data" ^ Filename.dir_sep
+          ^ String.sub (snd board) 0 (String.length (snd board) - 3)
+          ^ "json")) 
+  in 
   play
-    (Game.init_state players []
+    (Game.init_state players cards
        (Yojson.Basic.from_file
           ("data" ^ Filename.dir_sep
           ^ String.sub (snd board) 0 (String.length (snd board) - 3)

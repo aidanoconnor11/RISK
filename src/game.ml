@@ -15,7 +15,7 @@ type player = {
   name : string;
   territories : territory list;
   troops : int;
-  deck : card list;
+  mutable deck : card list;
 }
 
 let get_name p = p.name
@@ -26,7 +26,7 @@ let get_deck p = p.deck
 type game_state = {
   players : player list;
   mutable phase : int;
-  deck : card list;
+  mutable deck : card list;
   trade_in_ability : bool;
   trade_in_amount : int;
   territories : territory list;
@@ -41,14 +41,29 @@ let get_game_territories g = g.territories
 
 type t = game_state
 
-(*For now makes each card Infantry, working on way to fix*)
 let init_deck json =
   let ters = Game__Board.territories_from_file json in
   let ter_names = List.map (fun x -> Game__Board.get_territory_name x) ters in
+  let num_territories = List.length ter_names in
+  let num_cards = num_territories / 3 in
   let cards =
-    List.map (fun x -> { troop = "Infantry"; territory = x }) ter_names
+    let rec create_card_list count troop acc =
+      if count = 0 then acc
+      else
+        let new_card = { troop = troop; territory = List.nth ter_names (count-1) } in
+        create_card_list (count-1) (match troop with
+            | "Infantry" -> "Cavalry"
+            | "Cavalry" -> "Artillery"
+            | "Artillery" -> "Infantry"
+            | _ -> failwith "Invalid troop type"
+          ) (new_card::acc)
+    in
+    create_card_list num_cards "Infantry" []
+    @ create_card_list num_cards "Cavalry" []
+    @ create_card_list num_cards "Artillery" []
   in
   cards
+
 
 let init_player name t_lst troops d =
   { name; territories = t_lst; troops; deck = d }
@@ -173,7 +188,7 @@ let rec valid_trade gs =
 
 let rec get_cards () g : card * card * card =
   ANSITerminal.print_string [ ANSITerminal.green ]
-    "Which cards would you like to trade in?";
+    "Which cards would you like to trade in?\n";
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   try
     let t1 = read_line () in
@@ -193,7 +208,7 @@ let rec get_cards () g : card * card * card =
       "Something went wrong. Try again! \n";
     get_cards () g
 
-(*Capture Helper. Adds [x] troops to territory [ter]*)
+(*Helper. Adds [x] troops to territory [ter]*)
 let rec update_list lst ter x =
   match lst with
   | [] -> []
@@ -240,10 +255,11 @@ let troops_given state =
   let num_ters = get_territories (List.hd state.players) in
   List.length num_ters / 3
 
-let rec get_territory_draft () g player : territory =
+let rec get_territory_draft () g player num : territory =
   ANSITerminal.print_string [ ANSITerminal.green ]
-    ("Player " ^ player.name ^ " it's your turn! "
-   ^ "Which territory would you like to add troops to?");
+    ("Player " ^ player.name ^ " it's your turn! \n" ^
+    "You have " ^ string_of_int num ^ " troops to place \n"
+   ^ "Which territory would you like to add them to?");
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   try
     let t1 = read_line () in
@@ -255,14 +271,14 @@ let rec get_territory_draft () g player : territory =
     then (
       ANSITerminal.print_string [ ANSITerminal.green ]
         "You do not have possession of this territory. Try again! \n";
-      get_territory_draft () g player)
+      get_territory_draft () g player num)
     else
       let ter = Game__Board.get_territory_from_string t1 g.territories in
       ter
   with exn ->
     ANSITerminal.print_string [ ANSITerminal.green ]
       "Something went wrong. Try again! \n";
-    get_territory_draft () g player
+    get_territory_draft () g player num
 
 let rec get_trade_choice () =
   ANSITerminal.print_string [ ANSITerminal.green ]
@@ -283,54 +299,25 @@ let rec get_trade_choice () =
       "hmmm this didn't seem to be a valid input, try again! \n";
     get_trade_choice ()
 
-let rec get_draft_troops troops () =
-  ANSITerminal.print_string [ ANSITerminal.green ]
-    ("How many troops would you like to move to this territory? \n  You have "
-   ^ string_of_int troops ^ " to put on this territory");
-  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
-  try
-    let x = int_of_string (read_line ()) in
-    if x < 1 then (
-      ANSITerminal.print_string [ ANSITerminal.green ]
-        "Sorry, you must move at least one troop the territory. How\n\
-        \        many troops would you like to move?\n";
-      get_draft_troops troops ())
-    else x
-  with exn ->
-    ANSITerminal.print_string [ ANSITerminal.green ]
-      "hmmm this didn't seem to be a valid integer- enter the ASCII character \
-       of how many troops you're moving, i.e 3 \n";
-    get_draft_troops troops ()
-
 (*Might try to abstract at a later time. Should ensure player has valid trades*)
-let rec draft state count num_left =
-  let ter = get_territory_draft () state (List.hd state.players) in
-  let num_troops = get_draft_troops (troops_given state) () in
-  let new_ter_lst = 
-    update_list (get_territories (List.hd state.players)) ter num_troops in
-  let final_player = 
-      {(List.hd state.players) with territories = new_ter_lst} in
-  state.phase<-1;
-  if count = 0 then 
-  let choice = get_trade_choice () in
+let rec draft state =
+  let num_troops = troops_given state in
+  let ter = get_territory_draft () state (List.hd state.players) num_troops in
+  let choice = 
+    match List.length (valid_trade state) with
+    | 0 -> false 
+    | _ -> get_trade_choice () in
   let new_state = 
     match choice with
     | true -> trade state
     | false -> state in
-  let ter = get_territory_draft () new_state (List.hd new_state.players) in
   let new_ter_lst = 
     update_list (get_territories (List.hd new_state.players)) ter num_troops in
   let final_player = 
     {(List.hd new_state.players) with territories = new_ter_lst} in
-  let return_state = 
-    {state with players = final_player::(List.tl state.players)} in
-    draft return_state (count+1) (num_left - num_troops)
-  else if num_left > 0 then
-    let return_state =
-      { state with players = final_player :: List.tl state.players }
-    in
-    draft return_state (count + 1) (num_left - num_troops)
-  else { state with players = final_player :: List.tl state.players }
+  final_player.deck<-(List.hd (get_game_deck new_state))::(get_deck final_player);    
+  state.phase<-1;
+  {state with players = final_player::(List.tl state.players)}
 
 let elimination state p =
   let rec remove = function
