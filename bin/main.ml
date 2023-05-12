@@ -73,8 +73,7 @@ let read_whole_file filename =
   s
 
 let territories_from_players (players : player list) : territory list =
-  List.fold_left (fun acc player -> acc @ (get_territories player)) [] players
-
+  List.fold_left (fun acc player -> acc @ get_territories player) [] players
 
 let print_map (map_name : string) (terr_list : territory list) : unit =
   ANSITerminal.erase Screen;
@@ -252,46 +251,34 @@ let start_game (num_players : int) (terr_list : territory list)
    1) 35 :: List.tl terr_list in print_map "map_attempts.txt" new_terr_list *)
 
 let players_from_territories (ters : territory list) : player list =
-  let players = ref [] in
-  players := [
-    Game.init_player (string_of_int 0) [] 0 [];
-    Game.init_player (string_of_int 1) [] 0 [];
-    Game.init_player (string_of_int 2) [] 0 [];
-    Game.init_player (string_of_int 3) [] 0 [];
-    Game.init_player (string_of_int 4) [] 0 [];
-    Game.init_player (string_of_int 5) [] 0 [];
-  ];
-  List.iter (fun t ->
-    let player_index = (get_player_number t) in
-    let player = List.nth !players player_index in
-    let updated_territories = t :: get_territories player in
-    let updated_player = Game.init_player 
-      (get_name player) 
-      updated_territories
-      (get_troops player) 
-      (get_deck player)
-    in
-    List.iteri (fun i p ->
-      if i = player_index then players := updated_player :: !players else ()
-    ) !players
-  ) ters;
-  let filtered = List.filter (fun x -> (List.length (get_territories x))> 0) !players in
-  filtered
-
+  let players =
+    Array.init 6 (fun x -> Game.init_player (string_of_int x) [] 0 [])
+  in
+  List.iter
+    (fun x ->
+      players.(Game__Board.get_player_number x) <-
+        Game.init_player
+          (string_of_int (Game__Board.get_player_number x))
+          (x :: Game.get_territories players.(Game__Board.get_player_number x))
+          0 [])
+    ters;
+  List.filter
+    (fun x -> not (x = Game.init_player (string_of_int 0) [] 0 []))
+    (Array.to_list players)
 
 let rec play game board =
   match Game.finished_game game with
   | true ->
-    print_endline ("Congratulations! You have conquered the world!");
-    ()
-  | false ->
-    print_map (snd board) (territories_from_players (get_players game));
-    match Game.get_phase game with
-    | 0 -> play (Game.draft game 0 0) board
-    | 1 -> play (Game.attack game) board
-    | 2 -> play (Game.fortify game) board 
-    | _ -> play game  board
-    
+      print_endline "Congratulations! You have conquered the world!";
+      ()
+  | false -> (
+      print_map (snd board) (territories_from_players (get_players game));
+      match Game.get_phase game with
+      | 0 -> play (Game.draft game 0 0) board
+      | 1 -> play (Game.attack game) board
+      | 2 -> play (Game.fortify game) board
+      | _ -> play game board)
+
 let main () =
   (*To print amongus, uncomment this: ANSITerminal.print_string [
     ANSITerminal.blue ] "\n\ \ \ _____________ \n\ \ __| _______ |\n\ \ | | | |
