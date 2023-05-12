@@ -3,7 +3,6 @@ open Game__Board
 
 (*To run, run "OCAMLRUNPARAM=b dune exec bin/main.exe" in command line, or make
   play*)
-
 let number_of_players = ref (-1)
 
 let player_color =
@@ -115,6 +114,7 @@ let print_map (map_name : string) (terr_list : territory list) : unit =
 let rec assign_players (num_players : int)
     (players_num_territories : (int * int ref) list) (num_territories : int)
     (initial_troops : int array) (terr_list : territory list) =
+  Random.self_init ();
   match terr_list with
   | [] -> []
   | h :: t ->
@@ -186,6 +186,7 @@ let rec put_troops_here color (t : territory) (num_players : int)
    !next_list *)
 let rec mutable_player_assign_troops (num_players : int)
     (terr_list : territory list) map_name : territory list =
+  Random.self_init ();
   let looper = ref num_players in
   let first_player = ref (Random.int num_players) in
   while !looper <> 0 do
@@ -297,7 +298,8 @@ let main () =
   let num_players = get_num_players () in
   number_of_players := num_players;
   ANSITerminal.print_string [ ANSITerminal.green ]
-    "What map would you like to play? Our options are territories_basic \n";
+    "What map would you like to play? Our options are territories_basic and \
+     cornell_map \n";
   let board = get_map () in
   ANSITerminal.print_string [ ANSITerminal.white ] "\n";
   let players = players_from_territories(start_game num_players (fst board) (snd board)) in
