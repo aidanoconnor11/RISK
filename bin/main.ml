@@ -72,6 +72,10 @@ let read_whole_file filename =
   close_in ch;
   s
 
+let territories_from_players (players : player list) : territory list =
+  List.fold_left (fun acc player -> acc @ (get_territories player)) [] players
+
+
 let print_map (map_name : string) (terr_list : territory list) : unit =
   let map_string = read_whole_file ("data" ^ Filename.dir_sep ^ map_name) in
   let map_list = String.split_on_char ',' map_string in
@@ -271,7 +275,8 @@ let players_from_territories (ters : territory list) : player list =
       if i = player_index then players := updated_player :: !players else ()
     ) !players
   ) ters;
-  !players
+  let filtered = List.filter (fun x -> (List.length (get_territories x))> 0) !players in
+  filtered
 
 let rec play game board = 
   match Game.finished_game game with 
@@ -279,7 +284,7 @@ let rec play game board =
     print_endline ("Congratulations! You have conquered the world!");
     ()
   | false ->
-    print_map (snd board) (get_game_territories game);
+    print_map (snd board) (territories_from_players (get_players game));
     match Game.get_phase game with
     | 0 -> play (Game.draft game 0 0) board
     | 1 -> play (Game.attack game) board

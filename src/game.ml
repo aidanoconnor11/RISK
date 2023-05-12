@@ -277,12 +277,11 @@ let rec draft state count num_left =
       {(List.hd state.players) with territories = new_ter_lst} in
   state.phase<-1;
   if count = 0 then 
-  let updated_state = turn_change state in
   let choice = get_trade_choice () in
   let new_state = 
     match choice with
-    | true -> trade updated_state
-    | false -> updated_state in
+    | true -> trade state
+    | false -> state in
   let ter = get_territory_draft () new_state (List.hd new_state.players) in
   let new_ter_lst = 
     update_list (get_territories (List.hd new_state.players)) ter num_troops in
@@ -481,8 +480,9 @@ let fortify state =
   let second_ter_lst = update_list first_ter_lst t2 n in 
   let final_player = 
     {(List.hd state.players) with territories = second_ter_lst} in
-  state.phase<-0;  
-  {state with players = final_player::(List.tl state.players)}
+  let updated_state = turn_change state in  
+  updated_state.phase<-0;  
+  {updated_state with players = final_player::(List.tl state.players)}
 
 let finished_game state =
   let rec check (lst : player list) =
