@@ -46,7 +46,7 @@ val trade : t -> t
 (** [draft g b] is the resulting game state from [g] after the player 
     drafts a certain number of troops to territories [t] and trades in 
     cards given the choice to *)
-val draft : t -> int -> int -> t
+val draft : t -> t
 
 (** [elimination g p] is the resulting game state from [g] after the current
     player eliminates a player [p] *)
