@@ -105,6 +105,20 @@ name >:: fun _ ->
   (Game.get_territories 
   (List.nth (Game.get_players x) i))))
 
+let capture_territory_troops_test 
+(name : string)
+(state : Game.t)
+(t1 : string)
+(t2 : string)
+(expected_output : int list) : test =
+name >:: fun _ ->
+  let new_s = (capture state 
+  (get_territory_from_string t1 (territories_from_file  territory_yojson))
+  (get_territory_from_string t2 (territories_from_file  territory_yojson))) in
+  let player = List.hd (Game.get_players new_s) in
+  let list = (List.map Game__Board.get_territory_numtroops (Game.get_territories player)) in 
+  assert_equal ~printer:(pp_list pp_int) expected_output list
+
 let battle_decision_test 
 (name : string)
 (state : Game.t)
@@ -171,7 +185,7 @@ let game_tests =
       "Venezuela";
       "Peru"
     ] p2;
-    (* capture_test "Capturing" g1 "Central America" "Venezuela" 0[
+    capture_test "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
       "Greenland";
@@ -187,7 +201,10 @@ let game_tests =
       "Argentina";
       "Peru";
       "Brazil"
-    ]; *)
+    ]; 
+
+    capture_territory_troops_test "test" g2 "Great Britain" "China" [5; 3; 5; 4];
+
     elimination_test "Elimination test" g1 p2 ["Bob"];
 
     elimination_test "Eliminating from a longer list" g2 p1 ["Matt"; "Joe"; "Dave"];
@@ -196,9 +213,9 @@ let game_tests =
 
     update_list_test "updating China" t2 china 12 [14;4];
 
-    fortify_test "Scandanavia to Iceland" g2 [1; 7; 7];
+    fortify_test "Scandanavia to Iceland" g2 [1; 7; 7]; 
 
-    (* fortify_test "China to India" g3 [1; 5]; *)
+    fortify_test "China to India" g3 [1; 5];
 
 
 
