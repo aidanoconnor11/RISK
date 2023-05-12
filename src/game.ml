@@ -24,7 +24,7 @@ let get_deck p = p.deck
 
 type game_state = {
   players : player list;
-  phase : int;
+  mutable phase : int;
   deck: card list;
   trade_in_ability : bool;
   trade_in_amount : int;
@@ -63,23 +63,6 @@ let init_state p d f = {
   trade_in_amount = 0;
   territories = Game__Board.territories_from_file f;
 }
-
-let rec get_territory_draft () g  : territory = 
-  ANSITerminal.print_string [ ANSITerminal.green ] 
-  "Which territory would you like to add troops to?";
-  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
-  try
-    let t1 = read_line () in 
-    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) (get_territories(List.hd g.players))) = false then 
-    (ANSITerminal.print_string [ ANSITerminal.green ]
-    "You do not have possession of this territory. Try again!";
-    get_territory_draft () g) else 
-    let ter = (Game__Board.get_territory_from_string t1 g.territories) in 
-    (ter)
-  with exn -> 
-    ANSITerminal.print_string [ ANSITerminal.green ]
-      "Something went wrong. Try again! \n";
-    get_territory_draft () g
 
 let rec get_territory () g  : territory * territory = 
   ANSITerminal.print_string [ ANSITerminal.green ] 
@@ -225,28 +208,50 @@ let trade state =
     let g1 = {state with players = player::state.players} in 
   {g1 with deck = new_game_list}  
    
+let troops_given state =
+  let num_ters = get_territories (List.hd state.players) in 
+  (List.length num_ters)/3
+
+let rec get_territory_draft () g player : territory = 
+  ANSITerminal.print_string [ ANSITerminal.green ] 
+  ("Player " ^ player.name ^ " it's your turn!" ^
+  "Which territory would you like to add troops to?");
+  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+  try
+    let t1 = read_line () in 
+    if (List.exists (fun x -> Game__Board.get_territory_name x = t1) (get_territories(List.hd g.players))) = false then 
+    (ANSITerminal.print_string [ ANSITerminal.green ]
+    "You do not have possession of this territory. Try again!";
+    get_territory_draft () g player) else 
+    let ter = (Game__Board.get_territory_from_string t1 g.territories) in 
+    (ter)
+  with exn -> 
+    ANSITerminal.print_string [ ANSITerminal.green ]
+      "Something went wrong. Try again! \n";
+    get_territory_draft () g player
+
 let rec get_trade_choice () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
   "Would you like to trade in your cards for additional troops? Answer 'Yes' or 'No'";
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   try
     let x = (read_line ()) in
-    if x != "Yes" && x!="No" then (
+    if x <> "Yes" && x<>"No" then (
       ANSITerminal.print_string [ ANSITerminal.green ]
         "Sorry, you must answer 'Yes' or 'No'. Would you like to trade
         in cards for additional troops?\n";
       get_trade_choice ())
-    else if x == "Yes" then true 
+    else if x = "Yes" then true 
     else false 
   with exn ->
     ANSITerminal.print_string [ ANSITerminal.green ]
       "hmmm this didn't seem to be a valid input, try again! \n";
     get_trade_choice ()
 
-
-let rec get_draft_troops () =
+let rec get_draft_troops troops () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
-  "How many troops would you like to move to this territory?";
+  ("How many troops would you like to move to this territory? 
+  You have " ^ string_of_int troops ^ " to put on this territory");
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   try
     let x = int_of_string (read_line ()) in
@@ -254,22 +259,23 @@ let rec get_draft_troops () =
       ANSITerminal.print_string [ ANSITerminal.green ]
         "Sorry, you must move at least one troop the territory. How
         many troops would you like to move?\n";
-      get_draft_troops ())
+      get_draft_troops troops ())
     else x
   with exn ->
     ANSITerminal.print_string [ ANSITerminal.green ]
       "hmmm this didn't seem to be a valid integer- enter the ASCII character \
        of how many troops you're moving, i.e 3 \n";
-    get_draft_troops ()
+    get_draft_troops troops ()
 
 (*Might try to abstract at a later time. Should ensure player has valid trades*)
-let rec draft state count num_left = 
-  let num_troops = get_draft_troops () in
-  let ter = get_territory_draft () state in
+let rec draft state count num_left =
+  let ter = get_territory_draft () state (List.hd state.players) in
+  let num_troops = get_draft_troops (troops_given state) () in
   let new_ter_lst = 
     update_list (get_territories (List.hd state.players)) ter num_troops in
   let final_player = 
       {(List.hd state.players) with territories = new_ter_lst} in
+  state.phase<-1;
   if count = 0 then 
   let updated_state = turn_change state in
   let choice = get_trade_choice () in
@@ -277,7 +283,7 @@ let rec draft state count num_left =
     match choice with
     | true -> trade updated_state
     | false -> updated_state in
-  let ter = get_territory_draft () new_state in
+  let ter = get_territory_draft () new_state (List.hd new_state.players) in
   let new_ter_lst = 
     update_list (get_territories (List.hd new_state.players)) ter num_troops in
   let final_player = 
@@ -415,12 +421,12 @@ let rec get_num_dice () =
        of how many dice you're rolling, i.e 3 \n";
     get_num_dice ()
 
-let attack state = 
+let attack state =
   let d1 = get_num_dice () in 
   let d2 = get_num_dice () in
   let (t1,t2) = get_territory () state in
+  state.phase<-2;  
   (battle_decision state d1 d2 t1 t2)
-
 
 let rec get_num_troops_fortify () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
@@ -467,7 +473,7 @@ let rec get_territory_fortify () g  : territory * territory =
     get_territory_fortify () g
 
 (*Implementing without dfs checking neighbors for now*)
-let fortify state = 
+let fortify state =  
   let n = get_num_troops_fortify () in
   let (t1,t2) = get_territory_fortify () state in
   let first_ter_lst = update_list 
@@ -475,7 +481,17 @@ let fortify state =
   let second_ter_lst = update_list first_ter_lst t2 n in 
   let final_player = 
     {(List.hd state.players) with territories = second_ter_lst} in
+  state.phase<-0;  
   {state with players = final_player::(List.tl state.players)}
+
+let finished_game state =
+  let rec check (lst : player list) =
+    match lst with 
+    | [] -> false
+    | h :: t -> if (List.length h.territories) == (List.length state.territories)
+      then true else check t 
+  in
+  check state.players
 
 
 
