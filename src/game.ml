@@ -388,45 +388,40 @@ let capture state t1 t2 =
   else elimination { g2 with players = final_lst } p2
 
 (**Rolls to a random int value between 1 and 6 inclusive*)
-let roll : int =
-  let random_int = Random.int 6 in
-  match random_int with
-  | 0 -> 1
-  | 1 -> 2
-  | 2 -> 3
-  | 3 -> 4
-  | 4 -> 5
-  | _ -> 6
+let roll (): int =(Random.int 6) + 1
+
 
 (*Sorts given list to be in descending order*)
 let sorted_dice_list (lst : int list) : int list =
   List.rev (List.sort compare lst)
 
-(**Checks if either territory has been captured or not and if not it removes one
-   troop from t2. *)
-let updated_armies g t1 t2 =
-  if Game__Board.get_territory_numtroops t1 = 0 then capture g t1 t2
-  else if Game__Board.get_territory_numtroops t2 = 0 then capture g t2 t1
-  else
-    let update_player =
-      {
-        (List.hd g.players) with
-        territories = update_list (get_territories (List.hd g.players)) t2 (-1);
-      }
-    in
-    { g with players = update_player :: List.tl g.players }
+(**Checks if either territory has been captured or not and if not it removes 
+    one troop from t2. *)
+let updated_armies g t1 t2 = 
+  if Game__Board.get_territory_numtroops t1 = 0 then (capture g t1 t2) 
+    else if Game__Board.get_territory_numtroops t2 = 0 then
+    capture g t2 t1 else
+      let rec change_player_and_territories players ter p : player list =
+        match players with
+        |[] -> []
+        |h :: t -> if h = p then { h with territories = update_list (get_territories h) ter (-1)} :: t else
+          h :: change_player_and_territories t ter p
+        in
+      {g with players = change_player_and_territories g.players t2 (get_player_from_territory g t2)}
 
-let battle_decision state d1 d2 t1 t2 =
-  let rolls =
-    match (d1, d2) with
-    | 3, 2 -> ([ roll; roll; roll ], [ roll; roll ])
-    | 2, 2 -> ([ roll; roll ], [ roll; roll ])
-    | 1, 2 -> ([ roll ], [ roll; roll ])
-    | 3, 1 -> ([ roll; roll; roll ], [ roll ])
-    | _ -> ([], [])
-    (*For now, eventually will raise exn*)
-  in
-  let rec compare_dice g rolls =
+    (* let update_player = {(List.hd g.players) with territories = 
+      (update_list (get_territories (List.hd g.players)) t2 (-1))} in
+    {g with players = update_player::(List.tl g.players)} *)
+    
+let battle_decision state d1 d2 t1 t2 = 
+  let rolls = 
+  match (d1,d2) with
+  | (3,2) -> ([roll();roll();roll()],[roll();roll()])
+  | (2,2) -> ([roll();roll()],[roll();roll()])
+  | (1,2) -> ([roll()],[roll();roll()])
+  | (3,1) -> ([roll();roll();roll()],[roll()])
+  | _ -> ([],[]) (*For now, eventually will raise exn*)
+  in let rec compare_dice g rolls = 
     let first = sorted_dice_list (fst rolls) in
     let second = sorted_dice_list (snd rolls) in
     if first = [] || second = [] then g
