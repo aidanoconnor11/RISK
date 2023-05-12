@@ -173,8 +173,8 @@ let rec get_cards () g : card * card * card =
 let rec update_list lst ter x = 
   match lst with
   | [] -> []
-  | h :: t -> if h = ter then 
-    (Game__Board.add_armies_to_territory ter (x))::t 
+  | h :: t -> if Game__Board.get_territory_name h = Game__Board.get_territory_name ter  then 
+    (Game__Board.add_armies_to_territory h x)::t 
     else h::update_list t ter x 
 
 let turn_change state = 
@@ -308,7 +308,7 @@ let get_player_from_territory g ter =
   let rec check_territories (lst : territory list) =
   match lst with
   | [] -> false
-  | h :: t -> if h = ter then true else check_territories t in 
+  | h :: t -> if Game__Board.get_territory_name h = Game__Board.get_territory_name ter then true else check_territories t in 
   let rec check_players (lst : player list) =
   match lst with
   | [] -> raise UnknownPlayer
@@ -320,7 +320,7 @@ let get_player_from_territory g ter =
 let rec remove lst t2 =
   match lst with
   | [] -> []
-  | h :: t -> if h = t2 then t else h::remove t t2
+  | h :: t -> if get_territory_name h = get_territory_name t2 then t else h::remove t t2
 
 let rec get_num_troops () =
   ANSITerminal.print_string [ ANSITerminal.green ] 
