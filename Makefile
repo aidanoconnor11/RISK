@@ -29,7 +29,7 @@ zip:
 
 clean:
 	dune clean
-	rm -f adventure.zip
+	rm -f risk.zip
 
 doc:
 	dune build @doc
