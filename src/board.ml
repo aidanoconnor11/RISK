@@ -1,6 +1,8 @@
 open Yojson.Basic.Util
+
 exception UnknownTerritory of string
 exception NotNeighbors of string
+exception InvalidFile of Yojson.Basic.t
 
 type territory = {
   name : string;
@@ -40,8 +42,10 @@ let rec get_list (json : Yojson.Basic.t list) : territory list =
 (** json file switched to json list for use in get_list, returns territory list
     from get_list *)
 let territories_from_file (json : Yojson.Basic.t) : territory list =
-  let m = json |> Yojson.Basic.Util.to_list in
-  get_list m
+  try
+    let m = json |> Yojson.Basic.Util.to_list in
+    get_list m
+  with Not_found -> raise (InvalidFile json)
 
 let get_player_number (t : territory) : int = t.player
 

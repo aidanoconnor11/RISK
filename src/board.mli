@@ -8,6 +8,9 @@ exception UnknownTerritory of string
 exception NotNeighbors of string
 (**Raised when a player attempts to attack a non-neighbor*)
 
+exception InvalidFile of Yojson.Basic.t
+(**Raised when json file cannot be properly read into a territory list*)
+
 val territories_from_file : Yojson.Basic.t -> territory list
 (** [territories_from_file f] is the game's initial territory list specified by
     [f]. Requires [f] is a valid json file of territories containing names,

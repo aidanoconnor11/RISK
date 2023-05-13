@@ -69,11 +69,20 @@ let territory_yojson =
 let cornell_yojson = 
   Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ "cornell_map.json")
 
+
+
 let get_territories_from_continent_test (name : string) (continent : string)
     (f : Yojson.Basic.t) (expected : string list) : test =
   name >:: fun _ ->
   assert_equal ~cmp:cmp_set_like_lists ~printer:(pp_list pp_string) expected
     (List.map get_territory_name
+       (get_territories_from_continent (territories_from_file f) continent))
+
+let get_territories_from_continent_notfound (name : string) (continent : string)
+    (f : Yojson.Basic.t) (expected : string list) : test =
+  name >:: fun _ ->
+  assert_raises (InvalidFile f) (fun () ->
+    List.map get_territory_name
        (get_territories_from_continent (territories_from_file f) continent))
 
 let get_territory_from_string_test (name : string) (terr_name : string)
@@ -129,6 +138,10 @@ let set_territory_owner_test (name : string) (t : territory) (player_num : int)
 let get_player_number_test (name : string) (t : territory) (expected : int) :
     test =
   name >:: fun _ -> assert_equal expected (get_player_number t)
+
+let num_territories_test (name : string) (num : int) (f : Yojson.Basic.t) 
+(expected : int) : test =
+  name >:: fun _ -> assert_equal expected (num_territories num (territories_from_file f))
 
 let get_neighbors_test (name : string) (t : territory) (expected : string list)
     : test =
@@ -262,6 +275,12 @@ let board_tests =
       "Rose"; 
       "Cook"
     ];
+    get_territories_from_continent_test "Nonexistant Continent"
+    "North Pole" cornell_yojson
+    [];
+    get_territories_from_continent_test "Misspelled Continent"
+    "west campus" cornell_yojson
+    [];
     get_territory_from_string_test "Search for Venezuela" "Venezuela"
       territory_yojson "Venezuela";
     get_territory_from_string_test "Search for Greenland" "Greenland"
@@ -333,7 +352,11 @@ let board_tests =
       ["Carpenter"; "Statler"; "Construction"; "Rhodes"]; 
     get_name_test "Get Greenland's name" greenland "Greenland";
     get_name_test "Get Duffield's name" duffield "Duffield";
-    get_name_test "Get IBC's name" ibc "IBC"
+    get_name_test "Get IBC's name" ibc "IBC";
+    num_territories_test "Get number of territories in world" 0 territory_yojson 42;
+    num_territories_test "Get number of territories in Cornell" 0 cornell_yojson 35;
+    num_territories_test "Add number of territories in Cornell to 10" 10 cornell_yojson 45;
+    num_territories_test "Add number of territories in world to 500" 500 territory_yojson 542
   ]
 
 let d1 = init_deck territory_yojson
