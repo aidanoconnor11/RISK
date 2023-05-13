@@ -444,7 +444,7 @@ let game_tests =
       "Rose";
       "Cook"
     ] nigel;
-    
+
     capture_test_with_strings "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
@@ -483,7 +483,7 @@ let game_tests =
     battle_decision_test "3 vs 1" g2 3 1 gb china 1 [1; 4];
     
     battle_decision_test "3 vs 1 2nd try" g2 3 1 gb china 1 [1;4];
-    battle_decision_test "3 vs 1 3rd" g2 3 1 gb china 0 [3; 5; 6];
+    battle_decision_test "3 vs 1 3rd" g2 3 1 gb china 0 [3; 5; 6]; *)
 
 
 
@@ -495,7 +495,7 @@ let game_tests =
 
     update_list_test "updating China" t2 china 12 [14;4];
 
-    fortify_test "Scandanavia to Iceland" g2 [1; 7; 7]; 
+    (* fortify_test "Scandanavia to Iceland" g2 [1; 7; 7]; 
 
     fortify_test "China to India" g3 [1; 5]; *)
 
