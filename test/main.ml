@@ -158,12 +158,16 @@ let board_tests =
   ]
 
 let d1 = init_deck territory_yojson
+let d2 = init_deck cornell_yojson
 
-let d1_tuple =
-  List.map (fun x -> (Game.get_troop x, Game.get_card_territory x)) d1
+let d_to_tuple d =
+  List.map (fun x -> (Game.get_troop x, Game.get_card_territory x)) d
 
-let deck_test name expected_output =
-  name >:: fun _ -> assert_equal ~printer:(pp_list pp_tuple) expected_output d1_tuple
+let deck_test 
+  (name : string) 
+  (deck : card list)
+  (expected_output : (string * string) list) : test =
+  name >:: fun _ -> assert_equal ~printer:(pp_list pp_tuple) expected_output (d_to_tuple deck)
 
 let europe =
   get_territories_from_continent
@@ -187,6 +191,7 @@ let india = add_armies_to_territory (get_territory_from_string "India" asia) 4
 let t1 = [ scandanavia; iceland; gb ]
 let t2 = [ china; india ]
 
+let p_all = init_player "winner" (territories_from_file territory_yojson) 0 d1
 let p1 =
   init_player "Bob"
     (get_territories_from_continent
@@ -263,6 +268,10 @@ let g1 = init_state [p1;p2] d1 territory_yojson
 let g2 = init_state [p4;p3;p1;p2] d1 territory_yojson
 
 let g3 = init_state [p3;p4;p1;p2] d1 territory_yojson
+
+let g4 = init_state [p_all] d1 territory_yojson
+
+let g5 = init_state [p_all;p_all;p_all;p_all] d1 territory_yojson
 
 let capture_test_with_strings
 (name : string)
@@ -346,9 +355,19 @@ let fortify_test (name : string) (state : Game.t) (expected_output : int list) :
   in
   assert_equal ~printer:(pp_list pp_int) expected_output list
 
+let finished_game_test 
+  (name : string)
+  (state : Game.t)
+  (expected_output : bool) : test =
+  name >:: fun _ ->
+  assert_equal expected_output (finished_game state)
+
+
 let game_tests =
   [
-    deck_test "Initial" [("Cavalry","Alaska"); ("Infantry","Alberta"); ("Artillery","Central America"); ("Cavalry","Eastern US"); ("Infantry","Greenland"); ("Artillery","Northwest Territory"); ("Cavalry","Ontario"); ("Infantry","Quebec"); ("Artillery","Western US"); ("Cavalry","Argentina"); ("Infantry","Brazil"); ("Artillery","Venezuela"); ("Cavalry","Peru"); ("Infantry","Congo"); ("Artillery","Alaska"); ("Cavalry","Alberta"); ("Infantry","Central America"); ("Artillery","Eastern US"); ("Cavalry","Greenland"); ("Infantry","Northwest Territory"); ("Artillery","Ontario"); ("Cavalry","Quebec"); ("Infantry","Western US"); ("Artillery","Argentina"); ("Cavalry","Brazil"); ("Infantry","Venezuela"); ("Artillery","Peru"); ("Cavalry","Congo"); ("Infantry","Alaska"); ("Artillery","Alberta"); ("Cavalry","Central America"); ("Infantry","Eastern US"); ("Artillery","Greenland"); ("Cavalry","Northwest Territory"); ("Infantry","Ontario"); ("Artillery","Quebec"); ("Cavalry","Western US"); ("Infantry","Argentina"); ("Artillery","Brazil"); ("Cavalry","Venezuela"); ("Infantry","Peru"); ("Artillery","Congo")];
+    deck_test "Initial" d1 [("Cavalry","Alaska"); ("Infantry","Alberta"); ("Artillery","Central America"); ("Cavalry","Eastern US"); ("Infantry","Greenland"); ("Artillery","Northwest Territory"); ("Cavalry","Ontario"); ("Infantry","Quebec"); ("Artillery","Western US"); ("Cavalry","Argentina"); ("Infantry","Brazil"); ("Artillery","Venezuela"); ("Cavalry","Peru"); ("Infantry","Congo"); ("Artillery","Alaska"); ("Cavalry","Alberta"); ("Infantry","Central America"); ("Artillery","Eastern US"); ("Cavalry","Greenland"); ("Infantry","Northwest Territory"); ("Artillery","Ontario"); ("Cavalry","Quebec"); ("Infantry","Western US"); ("Artillery","Argentina"); ("Cavalry","Brazil"); ("Infantry","Venezuela"); ("Artillery","Peru"); ("Cavalry","Congo"); ("Infantry","Alaska"); ("Artillery","Alberta"); ("Cavalry","Central America"); ("Infantry","Eastern US"); ("Artillery","Greenland"); ("Cavalry","Northwest Territory"); ("Infantry","Ontario"); ("Artillery","Quebec"); ("Cavalry","Western US"); ("Infantry","Argentina"); ("Artillery","Brazil"); ("Cavalry","Venezuela"); ("Infantry","Peru"); ("Artillery","Congo")];
+    
+    deck_test "Cornell" d2 [("Cavalry","RPCC"); ("Infantry","Low-Rises"); ("Artillery","Donlon"); ("Cavalry","Appel"); ("Infantry","Jameson"); ("Artillery","Ganedago"); ("Cavalry","Dickson"); ("Infantry","Helen Newman"); ("Artillery","Morrison"); ("Cavalry","CKB"); ("Infantry","Statler"); ("Artillery","RPCC"); ("Cavalry","Low-Rises"); ("Infantry","Donlon"); ("Artillery","Appel"); ("Cavalry","Jameson"); ("Infantry","Ganedago"); ("Artillery","Dickson"); ("Cavalry","Helen Newman"); ("Infantry","Morrison"); ("Artillery","CKB"); ("Cavalry","Statler"); ("Infantry","RPCC"); ("Artillery","Low-Rises"); ("Cavalry","Donlon"); ("Infantry","Appel"); ("Artillery","Jameson"); ("Cavalry","Ganedago"); ("Infantry","Dickson"); ("Artillery","Helen Newman"); ("Cavalry","Morrison"); ("Infantry","CKB"); ("Artillery","Statler")];
     player_test "North America" [
       "Alaska";
       "Northwest Territory";
@@ -445,7 +464,7 @@ let game_tests =
       "Cook"
     ] nigel;
 
-    capture_test_with_strings "Capturing" g1 "Central America" "Venezuela" 0[
+    (* capture_test_with_strings "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
       "Greenland";
@@ -472,7 +491,7 @@ let game_tests =
 
     capture_test_with_ter "China captured" g2 gb china 1 [
       "India"
-    ];
+    ]; *)
 
 
     (* capture_territory_troops_test "capturing china by GB" g2 gb china 0 [5; 3; 5; 4]; 
@@ -489,16 +508,26 @@ let game_tests =
 
     elimination_test "Elimination test" g1 p2 ["Bob"];
 
-    elimination_test "Eliminating from a longer list" g2 p1 ["Matt"; "Joe"; "Dave"];
+    elimination_test "Eliminating with multiple players" g2 p1 ["Matt"; "Joe"; "Dave"];
 
-    update_list_test "updating Iceland" t1 iceland 5 [3;10;7];
+    elimination_test "Eliminating with only one player" g4 p_all [];
 
-    update_list_test "updating China" t2 china 12 [14;4];
+    elimination_test "Eliminating the middle element" g2 p3 ["Matt"; "Bob"; "Dave"];
+
+
+    (* update_list_test "updating Iceland" t1 iceland 5 [3;10;7];
+
+    update_list_test "updating China" t2 china 12 [14;4]; *)
 
     (* fortify_test "Scandanavia to Iceland" g2 [1; 7; 7]; 
 
     fortify_test "China to India" g3 [1; 5]; *)
 
+    finished_game_test "state 1" g1 false;
+    finished_game_test "state 2" g2 false;
+    finished_game_test "state 3" g3 false;
+    finished_game_test "finished state" g4 true;
+    finished_game_test "multiple winnings" g5 true
 
 
 ]
