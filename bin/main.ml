@@ -173,21 +173,6 @@ let rec put_troops_here color (t : territory) (num_players : int)
         \ > ";
     put_troops_here color t num_players player_num (read_line ())
 
-(* let players_assign_troops (num_players : int) (terr_list : territory list) :
-   territory list = let next_list : territory list ref = ref [] in let looper =
-   ref num_players in let first_player = ref (Random.int num_players) in while
-   !looper > 0 do let lst = territories_owned.(!first_player) in let color = snd
-   (List.find (fun z -> fst z = !first_player) player_color) in
-   ANSITerminal.print_string [ color ] ("\nPlayer " ^ string_of_int
-   (!first_player + 1) ^ ": "); List.iter (fun x -> ANSITerminal.print_string [
-   snd (List.find (fun z -> fst z = !first_player) player_color) ] ("You have
-   control of " ^ (Game__Board.get_territory_name x ^ ", and have ") ^
-   string_of_int (snd (List.find (fun x -> fst x = num_players)
-   initial_troops)).(!first_player) ^ " troops left. How many would you like to
-   put here? \n > "); let input = read_line () in next_list := put_troops_here
-   color x num_players !first_player input :: !next_list) lst; first_player :=
-   (!first_player + 1) mod num_players; looper := !looper - 1 done;
-   !next_list *)
 let rec mutable_player_assign_troops (num_players : int)
     (terr_list : territory list) map_name : territory list =
   let looper = ref num_players in
@@ -246,10 +231,6 @@ let start_game (num_players : int) (terr_list : territory list)
   print_map map_name init_board;
   init_board
 
-(* let terr_one = List.hd terr_list in let new_terr_list =
-   Game__Board.add_armies_to_territory (Game__Board.set_territory_owner terr_one
-   1) 35 :: List.tl terr_list in print_map "map_attempts.txt" new_terr_list *)
-
 let players_from_territories (ters : territory list) : player list =
   let players =
     Array.init 6 (fun x -> Game.init_player (string_of_int x) [] 0 [])
@@ -266,23 +247,18 @@ let players_from_territories (ters : territory list) : player list =
     (fun x -> not (x = Game.init_player (string_of_int 0) [] 0 []))
     (Array.to_list players)
 
-let print_players (players : player list) =
-  List.iter (fun x -> print_string (get_name x)) players
-
-let rec play game board =
+(* let rec play game board =
   match Game.finished_game game with
   | true ->
       print_endline "Congratulations! You have conquered the world!";
       ()
   | false -> (
       print_map (snd board) (territories_from_players (get_players game));
-      print_players (get_players game);
-      print_string (get_card_territory (List.hd (get_game_deck  game)));
       match Game.get_phase game with
       | 0 -> play (Game.draft game) board
       | 1 -> play (Game.attack game) board
       | 2 -> play (Game.fortify game) board
-      | _ -> play game board)
+      | _ -> play game board) *)
 
 let main () =
   (*To print amongus, uncomment this: ANSITerminal.print_string [
@@ -303,17 +279,25 @@ let main () =
   let players =
     players_from_territories (start_game num_players (fst board) (snd board))
   in
-  let cards = Game.init_deck (Yojson.Basic.from_file
-          ("data" ^ Filename.dir_sep
-          ^ String.sub (snd board) 0 (String.length (snd board) - 3)
-          ^ "json")) 
-  in 
-  play
-    (Game.init_state players cards
-       (Yojson.Basic.from_file
-          ("data" ^ Filename.dir_sep
-          ^ String.sub (snd board) 0 (String.length (snd board) - 3)
-          ^ "json")))
-    board
+
+  let initial =
+    ref
+      ( Game.init_state players []
+          (Yojson.Basic.from_file
+             ("data" ^ Filename.dir_sep
+             ^ String.sub (snd board) 0 (String.length (snd board) - 3)
+             ^ "json")),
+        [] )
+  in
+  while finished_game (fst !initial) = false do
+    let t = Game.draft (fst !initial) in
+    print_map (snd board) (snd t);
+    let i = Game.attack (fst t) in
+    print_map (snd board) (snd i);
+    initial := Game.fortify (fst i);
+    print_map (snd board) (snd !initial)
+  done;
+  ()
 
 let () = main ()
+
