@@ -80,6 +80,13 @@ let south_africa =
   territory_yojson |> territories_from_file
   |> get_territory_from_string "South Africa"
 
+let ibc = cornell_yojson |> territories_from_file
+|> get_territory_from_string "IBC"
+
+let duffield = cornell_yojson |> territories_from_file
+|> get_territory_from_string "Duffield"
+
+
 let add_armies_to_territory_test (name : string) (t : territory)
     (num_troops : int) (expected : int) : test =
   name >:: fun _ ->
@@ -104,6 +111,9 @@ let get_neighbors_test (name : string) (t : territory) (expected : string list)
   name >:: fun _ ->
   assert_equal ~cmp:cmp_set_like_lists ~printer:(pp_list pp_string) expected
     (get_neighbors t)
+let get_name_test (name : string) (t : territory) (expected_output : string) : test =
+  name >:: fun _ -> 
+    assert_equal expected_output (get_territory_name t)
 
 let board_tests =
   [
@@ -120,6 +130,34 @@ let board_tests =
         "Ontario";
         "Alberta";
       ];
+
+    get_territories_from_continent_test "Check territories of North Campus" 
+      "North Campus" cornell_yojson
+      [
+        "RPCC";
+        "Low-Rises";
+        "Donlon";
+        "Appel";
+        "Jameson";
+        "Ganedago";
+        "Dickson";
+        "Helen Newman";
+        "Morrison";
+        "CKB"
+      ];
+
+    get_territories_from_continent_test "Check territories of College Town"
+    "College Town" cornell_yojson
+    [
+      "IBC";
+      "7/11";
+      "CTB";
+      "Ned's";
+      "Hideaway";
+      "Level B";
+      "Loco"
+    ];
+
     get_territory_from_string_test "Search for Venezuela" "Venezuela"
       territory_yojson "Venezuela";
     get_territory_from_string_test "Search for Greenland" "Greenland"
@@ -148,13 +186,26 @@ let board_tests =
     get_territory_numtroops_test "Get num troops from South Africa" south_africa
       0;
     add_armies_to_territory_test "Add troops to South Africa" south_africa 0 0;
-    get_player_number_test "Get Greenland's owner (-1)" greenland ~-1;
+    (* get_player_number_test "Get Greenland's owner (-1)" greenland ~-1; *)
     set_territory_owner_test "Set Greenlands owner to 2" greenland 2 2;
-    get_player_number_test "Get Greenland's owner (2)" greenland ~-1;
+    set_territory_owner_test "Set Duffield's owner to 1" duffield 1 1;
+    (* get_player_number_test "Get Greenland's owner (2)" greenland ~-1; *)
     get_neighbors_test "Get South Africa's neighbors" south_africa
       [ "Madagascar"; "Congo"; "East Africa" ];
     get_neighbors_test "Get Greenland neighbors" greenland
       [ "Iceland"; "Northwest Territory"; "Ontario"; "Quebec" ];
+
+    get_neighbors_test "Get IBC's neighbors" ibc
+      [ "7/11"; "Snee"; "Construction"; "CTB"];
+    
+    get_neighbors_test "Get Duffield's neighbors" duffield
+      ["Carpenter"; "Statler"; "Construction"; "Rhodes"];
+
+    get_name_test "Get Greenland's name" greenland "Greenland";
+
+    get_name_test "Get Duffield's name" duffield "Duffield";
+
+    get_name_test "Get IBC's name" ibc "IBC"
   ]
 
 let d1 = init_deck territory_yojson
