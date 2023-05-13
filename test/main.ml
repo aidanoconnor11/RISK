@@ -41,6 +41,9 @@ let pp_list pp_elt lst =
 let territory_yojson =
   Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ "territories_basic.json")
 
+let cornell_yojson = 
+  Yojson.Basic.from_file ("data" ^ Filename.dir_sep ^ "cornell_map.json")
+
 let get_territories_from_continent_test (name : string) (continent : string)
     (f : Yojson.Basic.t) (expected : string list) : test =
   name >:: fun _ ->
@@ -162,20 +165,6 @@ let d1_tuple =
 let deck_test name expected_output =
   name >:: fun _ -> assert_equal ~printer:(pp_list pp_tuple) expected_output d1_tuple
 
-let p1 =
-  init_player "Bob"
-    (get_territories_from_continent
-       (territories_from_file territory_yojson)
-       "North America")
-    0 d1
-
-let p2 =
-  init_player "Dave"
-    (get_territories_from_continent
-       (territories_from_file territory_yojson)
-       "South America")
-    0 d1
-
 let europe =
   get_territories_from_continent
     (territories_from_file territory_yojson)
@@ -214,6 +203,56 @@ let p2 =
 
 let p3 = init_player "Joe" t2 20 d1
 let p4 = init_player "Matt" t1 12 d1
+
+let p5 = 
+  init_player "Aussie"
+    (get_territories_from_continent
+      (territories_from_file territory_yojson)
+        "Australia")
+      0 d1
+
+let p6 = 
+  init_player "Africa"
+    (get_territories_from_continent
+      (territories_from_file territory_yojson)
+        "Africa")
+      0 d1
+
+let rowan = 
+  init_player "Rowan"
+    (get_territories_from_continent
+      (territories_from_file cornell_yojson)
+        "North Campus")
+      0 d1
+
+let nigel = 
+  init_player "Nigel"
+    (get_territories_from_continent
+      (territories_from_file cornell_yojson)
+        "West Campus")
+      0 d1
+let aidan = 
+  init_player "Aidan"
+    (get_territories_from_continent
+      (territories_from_file cornell_yojson)
+        "Engineering Quad")
+      0 d1
+
+let teresa = 
+  init_player "Teresa"
+  (get_territories_from_continent
+    (territories_from_file cornell_yojson)
+      "College Town")
+    0 d1  
+
+let tad =
+  init_player "Tad"
+  (get_territories_from_continent
+    (territories_from_file cornell_yojson)
+      "Arts Quad")
+    0 d1  
+
+      
 
 let player_test name expected_output p =
   name >:: fun _ ->
@@ -321,12 +360,91 @@ let game_tests =
       "Ontario";
       "Alberta";
     ] p1; 
+
     player_test "South America" [
       "Argentina";
       "Brazil";
       "Venezuela";
       "Peru"
     ] p2;
+
+    player_test "Asia" [
+      "China";
+      "India"
+    ] p3;
+
+    player_test "Europe" [
+      "Scandanavia";
+      "Iceland";
+      "Great Britain"
+    ] p4;
+
+    player_test "Australia" [
+      "Eastern Australia";
+      "New Guinea";
+      "Western Australia";
+      "Indonesia"
+    ] p5;
+
+    player_test "Africa" [
+      "Congo";
+      "East Africa";
+      "Egypt";
+      "Madagascar";
+      "North Africa";
+      "South Africa"
+    ] p6;
+
+    player_test "North Campus" [
+      "RPCC";
+      "Low-Rises";
+      "Donlon";
+      "Appel";
+      "Jameson";
+      "Ganedago";
+      "Dickson";
+      "Helen Newman";
+      "Morrison";
+      "CKB"
+    ] rowan;
+
+    player_test "Engineering Quad" [
+      "Statler";
+      "Duffield";
+      "Carpenter";
+      "Construction";
+      "Rhodes";
+      "Snee"
+    ] aidan;
+
+    player_test "College Town" [
+      "IBC";
+      "7/11";
+      "CTB";
+      "Ned's";
+      "Hideaway";
+      "Level B";
+      "Loco"
+    ] teresa;
+
+    player_test "Arts Quad" [
+      "Ho Plaza";
+      "Olin";
+      "Goldwin Smith";
+      "Johnson";
+      "McGraw";
+      "Uris"
+    ] tad;
+
+    player_test "West Campus" [
+      "Baker Tower";
+      "Noyes Rec";
+      "Keaton";
+      "Bethe";
+      "Rose";
+      "Cook"
+    ] nigel;
+    
     capture_test_with_strings "Capturing" g1 "Central America" "Venezuela" 0[
       "Alaska";
       "Northwest Territory";
