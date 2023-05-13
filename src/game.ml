@@ -327,7 +327,32 @@ let rec owns_continent (local : territory list) (continent : territory list) :
   List.for_all (fun x -> List.mem x local) continent
 
 let ignore _ = ()
-let possible_move numtroops possible_terrs desired : bool = true
+let possible_move numtroops possible_terrs desired : bool =
+  try
+    let pairs = String.split_on_char ',' desired in
+    let desired_troops =
+      List.fold_left
+        (fun acc x ->
+          acc
+          + int_of_string
+              (List.hd (List.rev (List.tl (String.split_on_char ' ' x)))))
+        0 pairs
+    in
+    if desired_troops > numtroops then false
+    else
+      let captured_terr_name_list =
+        List.map (fun x -> Game__Board.get_territory_name x) possible_terrs
+      in
+      let desired_terr_name_list =
+        List.map (fun x -> List.hd (String.split_on_char ' ' x)) pairs
+      in
+      if
+        List.exists
+          (fun x -> not (List.mem x captured_terr_name_list))
+          desired_terr_name_list
+      then false
+      else true
+  with Failure e -> false
 
 let rec get_all_territories (m : player list) : territory list =
   match m with
