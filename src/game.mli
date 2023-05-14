@@ -65,11 +65,13 @@ val capture : t -> int -> Game__Board.territory -> t
     the player attacks a territory from a connecting territory*)
 val attack : t -> t * Game__Board.territory list
 
+(** [finished_game g] checks if anyone has won the game in its current state 
+    [g] and returns a bool to indicate whether or not it has*)
+val finished_game : t -> bool
+
 (** [fortify g] is the resulting game state and territory list from [g] after 
     the player fortifies one territory with a certain number of troops
     from another territory *)
 val fortify : t -> t * Game__Board.territory list
 
-(** [finished_game g] checks if anyone has won the game in its current state 
-    [g] and returns a bool to indicate whether or not it has*)
-val finished_game : t -> bool
+

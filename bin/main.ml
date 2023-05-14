@@ -247,24 +247,7 @@ let players_from_territories (ters : territory list) : player list =
     (fun x -> not (x = Game.init_player (string_of_int 0) [] 0 []))
     (Array.to_list players)
 
-(* let rec play game board =
-  match Game.finished_game game with
-  | true ->
-      print_endline "Congratulations! You have conquered the world!";
-      ()
-  | false -> (
-      print_map (snd board) (territories_from_players (get_players game));
-      match Game.get_phase game with
-      | 0 -> play (Game.draft game) board
-      | 1 -> play (Game.attack game) board
-      | 2 -> play (Game.fortify game) board
-      | _ -> play game board) *)
-
 let main () =
-  (*To print amongus, uncomment this: ANSITerminal.print_string [
-    ANSITerminal.blue ] "\n\ \ \ _____________ \n\ \ __| _______ |\n\ \ | | | |
-    |\n\ \ | | |_______| |\n\ \ |_| |\n\ \ | ____ |\n\ \ | | | |\n\ \ |___|
-    |___|"; *)
   ANSITerminal.print_string [ ANSITerminal.green ]
     "\n\
      Welcome to RISK in OCAML! Enter quit at any point to quit the game. \n\
@@ -297,6 +280,11 @@ let main () =
     initial := Game.fortify (fst i);
     print_map (snd board) (snd !initial)
   done;
+  let winner = List.hd (get_players (fst !initial)) in
+  ANSITerminal.print_string [ ANSITerminal.green ]
+    ("\n\n\nCongratulations player "  ^ 
+    string_of_int (int_of_string (get_name (winner)) + 1)  
+    ^ ", you have conquered the world!\n\n\n");
   ()
 
 let () = main ()

@@ -428,7 +428,7 @@ let rec draft s =
   let wanted_places = String.split_on_char ',' b in
   if
     (*TODO: Examine if Possible Move*)
-    possible_move (max 3 (num_territories / 3)) player.territories wanted_places
+    possible_move (max 3 (num_territories / 3)) player.territories b
   then (
     let pairs =
       List.map
@@ -642,7 +642,18 @@ let rec attack (s : t) : t * territory list =
       "\nIt's a simple yes or no question! Try again.";
     attack s)
 
+let finished_game state =
+  let rec check (lst : player list) =
+    match lst with
+    | [] -> false
+    | h :: t ->
+        if List.length h.territories == List.length state.territories then true
+        else check t
+  in
+  check state.players
+
 let rec fortify (s : t) =
+  if (finished_game s) = false then
   let player = List.nth s.players 0 in
   let territory_list_string = list_of_territories player.territories in
   let proper_terr_list_string =
@@ -710,14 +721,6 @@ let rec fortify (s : t) =
     ANSITerminal.print_string [ ANSITerminal.white ]
       "Please inpute either 'Yes' or 'No'\n";
     fortify s)
-
-let finished_game state =
-  let rec check (lst : player list) =
-    match lst with
-    | [] -> false
-    | h :: t ->
-        if List.length h.territories == List.length state.territories then true
-        else check t
-  in
-  check state.players
+  else 
+  (s, get_territories (List.hd s.players))
 
