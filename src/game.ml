@@ -420,6 +420,14 @@ let rec replace_underscores (s : string) : string =
       if h = '_' then implode [ ' ' ] ^ replace_underscores (implode t)
       else implode [ h ] ^ replace_underscores (implode t)
 
+let draft_string = 
+  " additional troops. Where would you like to place these troops? Note \
+    that you are able to place troops at multiple territories, so please \
+    enter\n\
+    in the following format: 'IBC 3,Level_B 5' if you would like to place 3 \
+    on IBC and 5 on Level B, for example.\n\
+  \ >"      
+
 let rec draft s =
   let player = List.nth s.players 0 in
   let territory_list_string = list_of_territories player.territories in
@@ -444,12 +452,7 @@ let rec draft s =
     ^ string_of_int num_territories
     ^ "/3)= "
     ^ string_of_int (max 3 (num_territories / 3))
-    ^ " additional troops. Where would you like to place these troops? Note \
-       that you are able to place troops at multiple territories, so please \
-       enter\n\
-       in the following format: 'IBC 3,Level_B 5' if you would like to place 3 \
-       on IBC and 5 on Level B, for example.\n\
-      \ >");
+    ^ draft_string);
   let b = read_line () in
   let wanted_places = String.split_on_char ',' b in
   if
@@ -469,7 +472,10 @@ let rec draft s =
       "This doesn't seem to be a valid set of territories! Try again, please\n";
     draft s)
 
-let capture (s : t) (pname : int) (captured : territory) : t =
+let capture 
+(s : t) 
+(pname : int) 
+(captured : territory) : t =
   let player = List.hd s.players in
   let new_player_val =
     { player with territories = captured :: player.territories }
@@ -511,6 +517,21 @@ let updated_armies g t1 t2 =
       }
     in
     { g with players = update_player :: List.tl g.players }
+
+let attack_strings = 
+  (
+    "\n\
+     ATTACK!!!!! \n\
+    \ Now, you must conquer. This is optional, but there's no way to win \
+     without attacking! Would you like to attack? Say 'Yes' if you would like \
+     to attack and 'No' if you would just like to move to fortify \n\
+     >",
+    ". Now remember, you can only attack nations connected to the one \
+        you're attacking from. You also may only attack from a place where you \
+        have at least 2 troops. Now, where would you like to attack from? \n\
+       \ >" 
+  )
+
 
 let rec dice_abstraction 
 (m : int) 
@@ -612,20 +633,6 @@ let rec num_abstraction
       "That's not an integer! Restart :( \n ";
     num_abstraction s attacked_terr t
 
-let attack_strings = 
-  (
-    "\n\
-     ATTACK!!!!! \n\
-    \ Now, you must conquer. This is optional, but there's no way to win \
-     without attacking! Would you like to attack? Say 'Yes' if you would like \
-     to attack and 'No' if you would just like to move to fortify \n\
-     >",
-    ". Now remember, you can only attack nations connected to the one \
-        you're attacking from. You also may only attack from a place where you \
-        have at least 2 troops. Now, where would you like to attack from? \n\
-       \ >" 
-  )
-
 let rec ter_abstraction 
 (s : t) 
 (player : player) 
@@ -701,7 +708,76 @@ let finished_game state =
   in
   check state.players
 
-let rec fortify (s : t) =
+let fortify_strings = 
+  (
+  " Now, you can either fortify a location by moving any of your troops \
+    from one territory you control to another. Note that you can NOT give \
+    up a territory by reducing the amount of troops you have on a location \
+    to 0. You can only do this once. Think very carefully, where do you \
+    want to move your troops to? Do you want to move them at all? Would you \
+    roll the dice, or play the mice. Enter 'No' if you want to opt-out of \
+    fortification, and 'Yes' if you would like to opt in\n\
+    >"
+  ,
+  "Where would you like to move troops from? You \
+        currently own the following territories: "
+  )
+
+let rec fort_troops_abstraction 
+(s : t) 
+(input : string) 
+(to_in : string) 
+(from : territory) 
+(go_to : territory) : t * territory list = 
+  print_white
+    ("How many troops would you like to move from " ^ input ^ " to "
+    ^ to_in ^ "?\n>");
+  let num_troops = read_line () in
+  try
+    let m = int_of_string num_troops in
+    if m >= Game__Board.get_territory_numtroops from then (
+      print_white
+        "Too many troops! \n";
+      fort_troops_abstraction s input to_in from go_to)
+    else (
+      ignore (Game__Board.add_armies_to_territory go_to m);
+      ignore (Game__Board.add_armies_to_territory from (-m));
+      ( { s with players = List.tl s.players @ [ List.hd s.players ] },
+        get_all_territories s.players ))
+  with Failure e ->
+    print_white "Not a valid int!";
+    fort_troops_abstraction s input to_in from go_to
+
+let rec fortify_abstraction 
+(s : t) 
+(string : string) 
+(player : player) : t * territory list =   
+  print_white
+    ((snd fortify_strings) ^ string
+    ^ "\n>");
+  let input = read_line () in
+  try
+    let from =
+      Game__Board.get_territory_from_string input player.territories
+    in
+    print_white
+      "Wonderful! Now, where would you like to move troops to?\n >";
+    let to_in = read_line () in
+    let go_to =
+      Game__Board.get_territory_from_string to_in player.territories
+    in
+    if from = go_to then (
+      print_white
+        "These are the same! Back to the beginning\n";
+      fortify_abstraction s string player)
+    else (
+      fort_troops_abstraction s input to_in from go_to)
+  with UnknownTerritory e ->
+    print_white
+      "Something went wrong, back to the beginning :( \n";
+    fortify_abstraction s string player
+
+let rec fortify s =
   if (finished_game s) = false then
   let player = List.nth s.players 0 in
   let territory_list_string = list_of_territories player.territories in
@@ -711,58 +787,10 @@ let rec fortify (s : t) =
   print_white
     ("Player "
     ^ string_of_int (int_of_string player.name + 1)
-    ^ " Now, you can either fortify a location by moving any of your troops \
-       from one territory you control to another. Note that you can NOT give \
-       up a territory by reducing the amount of troops you have on a location \
-       to 0. You can only do this once. Think very carefully, where do you \
-       want to move your troops to? Do you want to move them at all? Would you \
-       roll the dice, or play the mice. Enter 'No' if you want to opt-out of \
-       fortification, and 'Yes' if you would like to opt in\n\
-       >");
+    ^ (fst fortify_strings));
   let b = read_line () in
-  if String.compare b "Yes" = 0 then (
-    print_white
-      ("A wise decision. Where would you like to move troops from? You \
-        currently own the following territories: " ^ proper_terr_list_string
-     ^ "\n>");
-    let input = read_line () in
-    try
-      let from =
-        Game__Board.get_territory_from_string input player.territories
-      in
-      print_white
-        "Wonderful! Now, where would you like to move troops to?\n >";
-      let to_in = read_line () in
-      let go_to =
-        Game__Board.get_territory_from_string to_in player.territories
-      in
-      if from = go_to then (
-        print_white
-          "These are the same! Back to the beginning\n";
-        fortify s)
-      else (
-        print_white
-          ("How many troops would you like to move from " ^ input ^ " to "
-         ^ to_in ^ "?\n>");
-        let num_troops = read_line () in
-        try
-          let m = int_of_string num_troops in
-          if m >= Game__Board.get_territory_numtroops from then (
-            print_white
-              "Too many troops! \n";
-            fortify s)
-          else (
-            ignore (Game__Board.add_armies_to_territory go_to m);
-            ignore (Game__Board.add_armies_to_territory from (-m));
-            ( { s with players = List.tl s.players @ [ List.hd s.players ] },
-              get_all_territories s.players ))
-        with Failure e ->
-          print_white "Not a valid int!";
-          fortify s)
-    with UnknownTerritory e ->
-      print_white
-        "Something went wrong, back to the beginning :( \n";
-      fortify s)
+  if String.compare b "Yes" = 0 then 
+    fortify_abstraction s proper_terr_list_string player
   else if String.compare b "No" = 0 then
     ( { s with players = List.tl s.players @ [ List.hd s.players ] },
       get_all_territories s.players )
