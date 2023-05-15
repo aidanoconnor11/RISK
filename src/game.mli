@@ -54,6 +54,8 @@ val draft : t -> t * Game__Board.territory list
     player eliminates a player [p] *)
 val elimination : t -> player -> t
 
+(** [update_lst t_lst t i] returns a territory list after adding a new 
+    territory [t] with a number of troops on it [i] to a territory list [t_lst]*)
 val update_list : Game__Board.territory list -> Game__Board.territory -> int -> Game__Board.territory list
 
 (** [capture g i t] is the resulting game state from [g] after the player [i]

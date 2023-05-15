@@ -3,8 +3,13 @@ open Game__Board
 
 (*To run, run "OCAMLRUNPARAM=b dune exec bin/main.exe" in command line, or make
   play*)
+
+(** [number_of_players] is an int ref that will be changed depending on how 
+    many are playing*)  
 let number_of_players = ref (-1)
 
+(** [player_color] sets each player to have a certain distinct color in the 
+    terminal*)
 let player_color =
   [
     (-1, ANSITerminal.white);
@@ -16,6 +21,8 @@ let player_color =
     (5, ANSITerminal.magenta);
   ]
 
+(** [initial_troops] gives each player a certain number of troops depending 
+    on how many players are in the game*)  
 let initial_troops =
   [
     (2, Array.make 2 40);
@@ -25,9 +32,26 @@ let initial_troops =
     (6, Array.make 6 20);
   ]
 
+let rules_string = "\nWelcome to RISK in OCaml!
+RISK is a popular strategy board game that is played with two to six players. 
+The goal of the game is to conquer the world by capturing all the territories 
+on the game board. The game board is divided into several continents, which 
+are further divided into territories. At the beginning of the game, each player 
+is assigned a certain number of territories and armies. Players take turns 
+placing their armies on their territories and attacking their opponents. 
+Players can attack territories adjacent to their own territories, and can 
+continue attacking as long as they have armies to spare. If a player captures a
+territory, they can place additional armies on it. The game continues until one 
+player has conquered all the territories on the game board, at which point they 
+are declared the winner. Risk involves a combination of strategy, luck, and 
+diplomacy, making it a challenging and engaging game.\n\n
+Press Enter to proceed to the game"  
+
 let territories_owned = Array.make 6 []
 
-let rec get_num_players () =
+(** [get_num_players ()] reads input from the user to get the number of players
+    in the current game*)
+let rec get_num_players () : int =
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   let x = read_line () in
   try
@@ -46,7 +70,9 @@ let rec get_num_players () =
          character of how many players are playing, i.e 3 \n";
     get_num_players ()
 
-let rec get_map () =
+(** [get_map ()] gets the user input on which map they would like to use for
+    their game of RISK*)    
+let rec get_map () : territory list * string =
   ANSITerminal.print_string [ ANSITerminal.white ] "> ";
   let x = read_line () in
   try
@@ -65,17 +91,25 @@ let rec get_map () =
         "Hmm this doesn't seem to be a valid map. Try territories_basic \n";
     get_map ()
 
-(*Found on stackoverflow, evaluates to contents of a file as a string*)
-let read_whole_file filename =
+(** [read_whole_file f] evaluates to contents of a file [f] as a string*)
+let read_whole_file 
+(filename : string) : string =
   let ch = open_in filename in
   let s = really_input_string ch (in_channel_length ch) in
   close_in ch;
   s
 
-let territories_from_players (players : player list) : territory list =
+(** [territories_from_players p] takes in a player list [p] and outputs a 
+    territory list of all the territories each player possesses*)  
+let territories_from_players 
+(players : player list) : territory list =
   List.fold_left (fun acc player -> acc @ get_territories player) [] players
 
-let print_map (map_name : string) (terr_list : territory list) : unit =
+(** [print_map m t] takes in the map name [m] and current territory list [t]
+    and outputs the current map in the terminal*)
+let print_map 
+(map_name : string) 
+(terr_list : territory list) : unit =
   ANSITerminal.erase Screen;
   let map_string = read_whole_file ("data" ^ Filename.dir_sep ^ map_name) in
   let map_list = String.split_on_char ',' map_string in
@@ -115,9 +149,14 @@ let print_map (map_name : string) (terr_list : territory list) : unit =
     ANSITerminal.print_string [ ANSITerminal.magenta ] ", Player Six is Magenta";
   ANSITerminal.print_string [ ANSITerminal.white ] "\n"
 
-let rec assign_players (num_players : int)
-    (players_num_territories : (int * int ref) list) (num_territories : int)
-    (initial_troops : int array) (terr_list : territory list) =
+(** [assign_players n p num i t] assigns territories [t] randomly to each player
+    based on a number of players [n] and number of territories [num]*)
+let rec assign_players 
+(num_players : int)
+(players_num_territories : (int * int ref) list) 
+(num_territories : int)
+(initial_troops : int array) 
+(terr_list : territory list) : territory list =
   Random.self_init ();
   match terr_list with
   | [] -> []
@@ -143,8 +182,14 @@ let rec assign_players (num_players : int)
         :: assign_players num_players players_num_territories num_territories
              initial_troops t)
 
-let rec put_troops_here color (t : territory) (num_players : int)
-    (player_num : int) (input : string) : unit =
+(** [put_troops_here c t num p i] puts a number of troops on a territory [t] based
+    on string input [i] *)
+let rec put_troops_here 
+(color : ANSITerminal.style) 
+(t : territory) 
+(num_players : int)
+(player_num : int) 
+(input : string) : unit =
   try
     let want_troops_int = int_of_string input in
     if
@@ -173,8 +218,12 @@ let rec put_troops_here color (t : territory) (num_players : int)
         \ > ";
     put_troops_here color t num_players player_num (read_line ())
 
-let rec mutable_player_assign_troops (num_players : int)
-    (terr_list : territory list) map_name : territory list =
+(** [mutable_player_assign_troops n t m] assigns a number of troops to a player
+    in the beginning of the game*)
+let rec mutable_player_assign_troops 
+(num_players : int)
+(terr_list : territory list) 
+(map_name : string) : territory list =
   let looper = ref num_players in
   let first_player = ref 0 in
   while !looper <> 0 do
@@ -203,8 +252,12 @@ let rec mutable_player_assign_troops (num_players : int)
 
 let ignore _ = ()
 
-let start_game (num_players : int) (terr_list : territory list)
-    (map_name : string) =
+(** [start_game n t m] starts the game based on the number of players [n] and 
+    territory list that it's given [t]*)
+let start_game 
+(num_players : int) 
+(terr_list : territory list)
+(map_name : string) : territory list =
   ANSITerminal.print_string [ ANSITerminal.green ]
     "Looks like we're ready to get going! \n";
   ANSITerminal.print_string [ ANSITerminal.green ]
@@ -224,14 +277,16 @@ let start_game (num_players : int) (terr_list : territory list)
       terr_list
   in
   print_map map_name new_terr_list;
-  (*TODO: Improve this: *)
   let init_board =
     mutable_player_assign_troops num_players new_terr_list map_name
   in
   print_map map_name init_board;
   init_board
 
-let players_from_territories (ters : territory list) : player list =
+(** [players_from_territories t] extracts a player list from a list of 
+    territories [t]*)
+let players_from_territories 
+(ters : territory list) : player list =
   let players =
     Array.init 6 (fun x -> Game.init_player (string_of_int x) [] 0 [])
   in
@@ -247,10 +302,14 @@ let players_from_territories (ters : territory list) : player list =
     (fun x -> not (x = Game.init_player (string_of_int 0) [] 0 []))
     (Array.to_list players)
 
+(** [main ()] contains the beginning information and main game loop for the 
+    entire game*)
 let main () =
+  ANSITerminal.print_string [ ANSITerminal.green ] rules_string;
+  ignore (read_line ());
   ANSITerminal.print_string [ ANSITerminal.green ]
     "\n\
-     Welcome to RISK in OCAML! Enter quit at any point to quit the game. \n\
+     Enter quit at any point to quit the game. \n\
      How many players are playing in your game?\n";
   let num_players = get_num_players () in
   number_of_players := num_players;
@@ -262,10 +321,16 @@ let main () =
   let players =
     players_from_territories (start_game num_players (fst board) (snd board))
   in
-
+  let cards = 
+    init_deck 
+      (Yojson.Basic.from_file
+       ("data" ^ Filename.dir_sep
+           ^ String.sub (snd board) 0 (String.length (snd board) - 3)
+        ^ "json")) 
+  in
   let initial =
     ref
-      ( Game.init_state players []
+      ( Game.init_state players cards
           (Yojson.Basic.from_file
              ("data" ^ Filename.dir_sep
              ^ String.sub (snd board) 0 (String.length (snd board) - 3)
