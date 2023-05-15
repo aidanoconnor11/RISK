@@ -1,10 +1,11 @@
-# 3110-final-project
+# RISK IN OCAML
 
 Nigel Wormser (ngw37)
 Teresa Huang (th458)
 Rowan Hennessy (rah379)
 Aidan O'Connor (ao274)
 
+FOLLOW DIRECTIONS IN INSTALL.txt TO PLAY RISK
 1. To begin, open a new Terminal shell and expand it to fill your screen
 2. CD into the correct directory, as with any other project requiring make commands
 3. Run ’make play’ to begin the game
