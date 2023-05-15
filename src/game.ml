@@ -77,6 +77,7 @@ let init_state p d f =
     territories = Game__Board.territories_from_file f;
   }
 
+(** Printing functions for ANSITerminal printing*)
 let print_green s = ANSITerminal.print_string [ANSITerminal.green] s
 let print_white s = ANSITerminal.print_string [ANSITerminal.white] s
 

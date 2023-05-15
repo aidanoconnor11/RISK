@@ -4,6 +4,10 @@ open Game__Board
 (*To run, run "OCAMLRUNPARAM=b dune exec bin/main.exe" in command line, or make
   play*)
 
+(** Printing functions for ANSITerminal printing*)
+let print_green s = ANSITerminal.print_string [ANSITerminal.green] s
+let print_white s = ANSITerminal.print_string [ANSITerminal.white] s  
+
 (** [number_of_players] is an int ref that will be changed depending on how 
     many are playing*)  
 let number_of_players = ref (-1)
@@ -52,20 +56,20 @@ let territories_owned = Array.make 6 []
 (** [get_num_players ()] reads input from the user to get the number of players
     in the current game*)
 let rec get_num_players () : int =
-  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+  print_white "> ";
   let x = read_line () in
   try
     if int_of_string x < 2 || int_of_string x > 6 then (
-      ANSITerminal.print_string [ ANSITerminal.green ]
+      print_green
         "Sorry, RISK is a 2-6 player game! \n";
       get_num_players ())
     else int_of_string x
   with exn ->
     if String.uppercase_ascii x = "QUIT" then (
-      ANSITerminal.print_string [ ANSITerminal.green ] "Goodbye!\n";
+      print_green "Goodbye!\n";
       exit 0)
     else
-      ANSITerminal.print_string [ ANSITerminal.green ]
+      print_green
         "hmmm this didn't seem to be a valid integer- enter the ASCII \
          character of how many players are playing, i.e 3 \n";
     get_num_players ()
@@ -73,7 +77,7 @@ let rec get_num_players () : int =
 (** [get_map ()] gets the user input on which map they would like to use for
     their game of RISK*)    
 let rec get_map () : territory list * string =
-  ANSITerminal.print_string [ ANSITerminal.white ] "> ";
+  print_white "> ";
   let x = read_line () in
   try
     let board =
@@ -84,10 +88,10 @@ let rec get_map () : territory list * string =
     board
   with exn ->
     if String.uppercase_ascii x = "QUIT" then (
-      ANSITerminal.print_string [ ANSITerminal.green ] "Goodbye!\n";
+      print_green "Goodbye!\n";
       exit 0)
     else
-      ANSITerminal.print_string [ ANSITerminal.green ]
+      print_green
         "Hmm this doesn't seem to be a valid map. Try territories_basic \n";
     get_map ()
 
@@ -135,7 +139,7 @@ let print_map
           ^ string_of_int
               (Game__Board.get_territory_numtroops
                  (Game__Board.get_territory_from_string x terr_list)))
-      else ANSITerminal.print_string [ ANSITerminal.white ] x)
+      else print_white x)
     map_list;
   ANSITerminal.print_string [ ANSITerminal.blue ] "\nPlayer One is Blue";
   ANSITerminal.print_string [ ANSITerminal.red ] ", Player Two is Red";
@@ -144,10 +148,10 @@ let print_map
   if !number_of_players > 3 then
     ANSITerminal.print_string [ ANSITerminal.cyan ] ", Player Four is Cyan";
   if !number_of_players > 4 then
-    ANSITerminal.print_string [ ANSITerminal.green ] ", Player Five is Green";
+    print_green ", Player Five is Green";
   if !number_of_players > 5 then
     ANSITerminal.print_string [ ANSITerminal.magenta ] ", Player Six is Magenta";
-  ANSITerminal.print_string [ ANSITerminal.white ] "\n"
+  print_white "\n"
 
 (** [assign_players n p num i t] assigns territories [t] randomly to each player
     based on a number of players [n] and number of territories [num]*)
@@ -258,15 +262,15 @@ let start_game
 (num_players : int) 
 (terr_list : territory list)
 (map_name : string) : territory list =
-  ANSITerminal.print_string [ ANSITerminal.green ]
+  print_green
     "Looks like we're ready to get going! \n";
-  ANSITerminal.print_string [ ANSITerminal.green ]
+  print_green
     "First, the game will randomly assign you the proper amount of troops for \
      how many players are playing and give you control of a proportionate \
      amount of countries. Then, it will be up to you to place your remaining \
      troops on the territories you control, based on locations and strategy. \
      The game will roll to decide who goes first!";
-  ANSITerminal.print_string [ ANSITerminal.green ]
+  print_green
     "\nHit Enter when you understand and are ready to begin!\n";
   ignore (read_line ());
   let new_terr_list =
@@ -305,19 +309,19 @@ let players_from_territories
 (** [main ()] contains the beginning information and main game loop for the 
     entire game*)
 let main () =
-  ANSITerminal.print_string [ ANSITerminal.green ] rules_string;
+  print_green rules_string;
   ignore (read_line ());
-  ANSITerminal.print_string [ ANSITerminal.green ]
+  print_green
     "\n\
      Enter quit at any point to quit the game. \n\
      How many players are playing in your game?\n";
   let num_players = get_num_players () in
   number_of_players := num_players;
-  ANSITerminal.print_string [ ANSITerminal.green ]
+  print_green
     "What map would you like to play? Our options are territories_basic and \
      cornell_map \n";
   let board = get_map () in
-  ANSITerminal.print_string [ ANSITerminal.white ] "\n";
+  print_white "\n";
   let players =
     players_from_territories (start_game num_players (fst board) (snd board))
   in
@@ -346,7 +350,7 @@ let main () =
     print_map (snd board) (snd !initial)
   done;
   let winner = List.hd (get_players (fst !initial)) in
-  ANSITerminal.print_string [ ANSITerminal.green ]
+  print_green
     ("\n\n\nCongratulations player "  ^ 
     string_of_int (int_of_string (get_name (winner)) + 1)  
     ^ ", you have conquered the world!\n\n\n");
